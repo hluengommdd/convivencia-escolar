@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================
+   ESTILOS DE IMPRESIÓN
+========================== */
+@media print {
+  body {
+    background: white;
+  }
+
+  /* Ocultar botones, navegación y acciones */
+  button,
+  nav,
+  aside {
+    display: none !important;
+  }
+
+  /* Contenedor principal */
+  .print-container {
+    padding: 0 !important;
+  }
+
+  /* Header institucional */
+  .print-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 2px solid #000;
+    padding-bottom: 12px;
+    margin-bottom: 24px;
+  }
+
+  .print-header img {
+    height: 60px;
+  }
+
+  .print-title {
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  .print-section {
+    margin-bottom: 20px;
+  }
+
+  .print-section h2 {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 6px;
+    border-bottom: 1px solid #000;
+  }
+
+  .print-footer {
+    margin-top: 40px;
+    font-size: 12px;
+    text-align: right;
+  }
+}
