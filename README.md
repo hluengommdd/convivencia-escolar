@@ -1,3 +1,56 @@
+Sistema de Gestión de Convivencia Escolar
+
+Aplicación web para **registrar, seguir y analizar** casos de convivencia escolar, con foco en el debido proceso, los plazos y la toma de decisiones informada a partir de datos.[1][2]
+
+## Características principales
+
+- **Dashboard operativo** con KPIs de casos activos/cerrados, tasa de cierre, casos del día y alertas por tipificación de conducta y curso.[2]
+- **Gestión de casos**: cada caso tiene ficha con estudiante, curso, fecha/hora, tipificación, categoría y descripción breve del incidente.[1]
+- **Seguimiento y control de plazos**: registro de acciones, etapa del debido proceso, responsable, estados y alertas de plazos (🔴 vencidos, 🟠 urgentes, 🟡 próximos).[2][1]
+- **Casos activos y cerrados**: vista diferenciada para gestión en curso y archivo histórico.[3][4]
+- **Estadísticas avanzadas**: filtros por año y semestre, tiempos promedio de cierre, reincidencia por estudiante, carga por responsable, distribución por mes, curso y tipificación.[5]
+- **Informes PDF** de caso para respaldo interno o comunicación formal.[1]
+
+## Tecnologías utilizadas
+
+- **React** (SPA, rutas con `react-router-dom`).[1]
+- **Recharts** para gráficos de barras, líneas y tortas.[5][2]
+- **lucide-react** para iconografía.[2]
+- **Airtable** como backend de datos (tablas `CASOS_ACTIVOS` y `SEGUIMIENTOS`, vista “Grid view” y “Control de Plazos”).[5][2]
+
+## Estructura funcional
+
+- `Dashboard.jsx`: resumen operativo, KPIs y gráficos, más bloque de casos urgentes y alertas de plazos con acceso rápido al seguimiento.[2]
+- `CasosActivos.jsx` / `CasosCerrados.jsx`: listados filtrados por estado del caso.[4][3]
+- `SeguimientoPage.jsx`: detalle de caso, registro de nuevas acciones, cierre y exportación de informe.[1]
+- `Seguimientos.jsx`: vista de acciones registradas y control de plazos por caso.[6]
+- `Estadisticas.jsx`: panel de análisis histórico y directivo.[5]
+- `AlertasPlazos.jsx`: monitor específico de alertas según días restantes.[7]
+
+## Configuración y despliegue
+
+1. Clonar el repositorio.  
+2. Crear archivo de entorno (`.env.local`) con las credenciales de Airtable: base ID, API key y nombres de tablas/vistas.[5][2]
+3. Instalar dependencias y levantar en desarrollo:
+
+```bash
+npm install
+npm run dev
+```
+
+4. Para producción, generar build y desplegar (por ejemplo, en Vercel):
+
+```bash
+npm run build
+```
+
+## Uso sugerido en la escuela
+
+- Uso diario por **Encargado/a de Convivencia** y dupla psicosocial para registrar incidentes y acciones.[8][1]
+- Uso periódico por **equipo directivo** para monitorear tiempos de respuesta, reincidencia y carga de trabajo, y orientar ajustes al Reglamento de Convivencia y protocolos.[8][5]
+
+
+****
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
