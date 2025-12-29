@@ -11,6 +11,7 @@ export default function CasosActivos() {
   const [selectedCaso, setSelectedCaso] = useState(null)
   const [loading, setLoading] = useState(true)
   const [nuevo, setNuevo] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   // ✅ LEER QUERY PARAM ?caso=recXXXX
   const [searchParams] = useSearchParams()
@@ -46,17 +47,24 @@ export default function CasosActivos() {
     }
 
     cargar()
-  }, [selectedId])
+  }, [selectedId, refreshKey])
 
   return (
     <div className="h-full">
       <div className="flex gap-6 h-full">
         {/* LISTA IZQUIERDA */}
         <div className="w-1/2 bg-white border rounded-xl overflow-hidden flex flex-col">
-          <div className="px-4 py-3 border-b">
+          <div className="px-4 py-3 border-b flex items-center justify-between">
             <h2 className="text-lg font-semibold">
               Casos Activos
             </h2>
+            <button
+              onClick={() => setNuevo(true)}
+              className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm font-medium"
+            >
+              <Plus size={18} />
+              Nuevo Caso
+            </button>
           </div>
 
           {/* ENCABEZADO */}
@@ -149,18 +157,13 @@ export default function CasosActivos() {
         </div>
       </div>
 
-      {/* BOTÓN NUEVO CASO */}
-      <button
-        onClick={() => setNuevo(true)}
-        className="fixed bottom-8 right-8 bg-red-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-red-700"
-      >
-        <Plus size={24} />
-      </button>
-
       {nuevo && (
         <NuevoCasoModal
           onClose={() => setNuevo(false)}
-          onSaved={() => setNuevo(false)}
+          onSaved={() => {
+            setNuevo(false)
+            setRefreshKey(k => k + 1)
+          }}
         />
       )}
     </div>

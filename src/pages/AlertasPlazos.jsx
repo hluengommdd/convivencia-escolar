@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAirtable } from '../hooks/useAirtable'
+import { AlertTriangle, Clock, CheckCircle, FileText } from 'lucide-react'
 
 export default function AlertasPlazos() {
   const navigate = useNavigate()
@@ -9,6 +10,9 @@ export default function AlertasPlazos() {
     'SEGUIMIENTOS',
     'Control de Plazos'
   )
+
+  // Cargar casos para obtener información de estudiantes
+  const { data: casos } = useAirtable('CASOS_ACTIVOS', 'Grid view')
 
   /* =========================
      CLASIFICACIÓN
@@ -55,18 +59,49 @@ export default function AlertasPlazos() {
   if (error) return <p className="text-red-500">Error: {error}</p>
 
   return (
-    <div className="space-y-10">
-      <p className="text-sm text-gray-600">
-        Control operativo de plazos · Debido proceso
-      </p>
+    <div className="space-y-6">
+      {/* HEADER */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Alertas y Control de Plazos</h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Monitoreo operativo del debido proceso · Actualizado en tiempo real
+          </p>
+        </div>
+      </div>
 
-      {/* RESUMEN */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Resumen label="🔴 Vencidos" value={resumen.rojos} color="text-red-600" />
-        <Resumen label="🟠 Urgentes" value={resumen.naranjos} color="text-orange-600" />
-        <Resumen label="🟡 Próximos" value={resumen.amarillos} color="text-yellow-600" />
-        <Resumen label="✅ En plazo" value={resumen.verdes} color="text-green-600" />
-        <Resumen label="⏳ Sin plazo" value={resumen.sin} color="text-gray-500" />
+      {/* RESUMEN CON CARDS MEJORADAS */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <CardResumen 
+          icon={<AlertTriangle className="text-red-600" size={24} />}
+          label="Vencidos"
+          value={resumen.rojos}
+          color="red"
+        />
+        <CardResumen 
+          icon={<AlertTriangle className="text-orange-600" size={24} />}
+          label="Urgentes"
+          value={resumen.naranjos}
+          color="orange"
+        />
+        <CardResumen 
+          icon={<Clock className="text-yellow-600" size={24} />}
+          label="Próximos"
+          value={resumen.amarillos}
+          color="yellow"
+        />
+        <CardResumen 
+          icon={<CheckCircle className="text-green-600" size={24} />}
+          label="En plazo"
+          value={resumen.verdes}
+          color="green"
+        />
+        <CardResumen 
+          icon={<FileText className="text-gray-500" size={24} />}
+          label="Sin plazo"
+          value={resumen.sin}
+          color="gray"
+        />
       </div>
 
       {/* SECCIONES */}
@@ -74,6 +109,7 @@ export default function AlertasPlazos() {
         titulo="🔴 Vencidos / Críticos"
         descripcion="Requieren acción inmediata"
         items={clasificados.rojos}
+        casos={casos || []}
         navigate={navigate}
         tone="red"
         large
@@ -83,6 +119,7 @@ export default function AlertasPlazos() {
         titulo="🟠 Urgentes"
         descripcion="Vencen hoy o en pocos días"
         items={clasificados.naranjos}
+        casos={casos || []}
         navigate={navigate}
         tone="orange"
       />
@@ -91,6 +128,7 @@ export default function AlertasPlazos() {
         titulo="🟡 Preventivos"
         descripcion="Seguimiento anticipado"
         items={clasificados.amarillos}
+        casos={casos || []}
         navigate={navigate}
         tone="yellow"
         compact
@@ -109,6 +147,28 @@ export default function AlertasPlazos() {
    COMPONENTES AUX
 ========================== */
 
+function CardResumen({ icon, label, value, color }) {
+  const colorClasses = {
+    red: 'bg-red-50 border-red-200',
+    orange: 'bg-orange-50 border-orange-200',
+    yellow: 'bg-yellow-50 border-yellow-200',
+    green: 'bg-green-50 border-green-200',
+    gray: 'bg-gray-50 border-gray-200'
+  }
+
+  return (
+    <div className={`border-2 rounded-xl p-4 ${colorClasses[color]}`}>
+      <div className="flex items-center justify-between mb-2">
+        {icon}
+        <span className={`text-3xl font-bold ${color === 'gray' ? 'text-gray-700' : `text-${color}-700`}`}>
+          {value}
+        </span>
+      </div>
+      <div className="text-sm font-medium text-gray-700">{label}</div>
+    </div>
+  )
+}
+
 function Resumen({ label, value, color }) {
   return (
     <div className="bg-white border rounded-xl p-4">
@@ -122,6 +182,7 @@ function Seccion({
   titulo,
   descripcion,
   items,
+  casos,
   navigate,
   tone,
   large = false,
@@ -130,17 +191,40 @@ function Seccion({
   if (!items || items.length === 0) return null
 
   const toneMap = {
-    red: 'border-red-300 bg-red-50',
-    orange: 'border-orange-300 bg-orange-50',
-    yellow: 'border-yellow-300 bg-yellow-50',
+    red: {
+      border: 'border-red-200',
+      bg: 'bg-red-50',
+      hover: 'hover:bg-red-100 hover:shadow-md',
+      text: 'text-red-900',
+      badge: 'bg-red-100 text-red-800'
+    },
+    orange: {
+      border: 'border-orange-200',
+      bg: 'bg-orange-50',
+      hover: 'hover:bg-orange-100 hover:shadow-md',
+      text: 'text-orange-900',
+      badge: 'bg-orange-100 text-orange-800'
+    },
+    yellow: {
+      border: 'border-yellow-200',
+      bg: 'bg-yellow-50',
+      hover: 'hover:bg-yellow-100 hover:shadow-md',
+      text: 'text-yellow-900',
+      badge: 'bg-yellow-100 text-yellow-800'
+    }
   }
+
+  const styles = toneMap[tone]
 
   return (
     <section className="space-y-4">
-      <div>
-        <h2 className="font-semibold text-gray-900">{titulo}</h2>
-        <p className="text-xs text-gray-600">{descripcion}</p>
+      <div className="flex items-center gap-3">
+        <h2 className="text-xl font-bold text-gray-900">{titulo}</h2>
+        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-semibold">
+          {items.length}
+        </span>
       </div>
+      <p className="text-sm text-gray-600">{descripcion}</p>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {items.map(s => {
@@ -148,36 +232,60 @@ function Seccion({
           const dias = s.fields?.Dias_Restantes
           const disabled = !casoId
 
+          // Buscar información del caso asociado
+          const caso = casos?.find(c => c.id === casoId)
+          const estudiante = caso?.fields?.Estudiante_Responsable
+          const curso = caso?.fields?.Curso_Incidente
+
           return (
             <div
               key={s.id}
               onClick={() => !disabled && navigate(`/seguimientos?caso=${casoId}`)}
-              className={`border rounded-xl p-${large ? '5' : '4'} transition
-                ${toneMap[tone]}
-                ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-sm'}
+              className={`border-2 rounded-xl p-5 transition-all
+                ${styles.border} ${styles.bg} ${!disabled && styles.hover}
+                ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                 ${compact ? 'text-sm' : ''}
               `}
             >
-              <p className="font-semibold text-gray-900">
-                {s.fields?.Etapa_Debido_Proceso || 'Etapa sin dato'}
-              </p>
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <p className={`font-bold ${styles.text} mb-1`}>
+                    {s.fields?.Etapa_Debido_Proceso || 'Etapa sin dato'}
+                  </p>
+                  {estudiante && (
+                    <p className="text-sm font-semibold text-gray-800 mb-1">
+                      👤 {estudiante} {curso && `· ${curso}`}
+                    </p>
+                  )}
+                  <p className="text-sm text-gray-700">
+                    <strong>Responsable:</strong> {s.fields?.Responsable || '—'}
+                  </p>
+                </div>
+                
+                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${styles.badge} whitespace-nowrap`}>
+                  {typeof dias === 'number'
+                    ? dias < 0
+                      ? `Vencido ${Math.abs(dias)}d`
+                      : dias === 0
+                      ? 'Vence hoy'
+                      : `${dias} días`
+                    : 'Sin plazo'}
+                </span>
+              </div>
 
-              <p className="text-xs text-gray-700">
-                Responsable: {s.fields?.Responsable || '—'}
-              </p>
+              {s.fields?.Detalle && (
+                <p className="text-xs text-gray-600 mb-2 line-clamp-2">
+                  {s.fields.Detalle}
+                </p>
+              )}
 
-              <p className="text-xs text-gray-600 mt-1">
-                {typeof dias === 'number'
-                  ? dias < 0
-                    ? `Vencido hace ${Math.abs(dias)} día(s)`
-                    : dias === 0
-                    ? 'Vence hoy'
-                    : `Faltan ${dias} día(s)`
-                  : 'Sin plazo definido'}
-              </p>
-
-              <div className="text-xs font-semibold mt-2">
-                {s.fields?.Alerta_Urgencia || '⏳'}
+              <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                <span className="text-xs font-medium text-gray-500">
+                  {s.fields?.Tipo_Accion || 'Sin tipo'}
+                </span>
+                <span className="text-xs text-gray-400">
+                  {s.fields?.Fecha || '—'}
+                </span>
               </div>
             </div>
           )

@@ -4,6 +4,8 @@ import SeguimientoPage from './SeguimientoPage'
 import { formatDate } from '../utils/formatDate'
 
 export default function CasosCerrados() {
+  const [refreshKey, setRefreshKey] = useState(0)
+  
   const {
     data: casos,
     loading,
@@ -11,7 +13,8 @@ export default function CasosCerrados() {
   } = useAirtable(
     'CASOS_ACTIVOS',
     'Grid view',
-    "Estado = 'Cerrado'"
+    "Estado = 'Cerrado'",
+    refreshKey
   )
 
   const [selectedCaso, setSelectedCaso] = useState(null)
@@ -33,9 +36,9 @@ export default function CasosCerrados() {
   }
 
   return (
-    <div className="flex gap-6">
+    <div className="flex gap-6 h-full">
       {/* LISTA IZQUIERDA */}
-      <div className="w-1/2 bg-white border rounded-xl overflow-hidden">
+      <div className="w-1/2 bg-white border rounded-xl overflow-hidden flex flex-col">
         <div className="px-4 py-3 border-b">
           <h2 className="text-lg font-semibold">
             Casos Cerrados
@@ -51,6 +54,8 @@ export default function CasosCerrados() {
           <div className="col-span-2">Estado</div>
         </div>
 
+        {/* LISTA */}
+        <div className="overflow-y-auto flex-1">
         {casos.length === 0 && (
           <p className="p-4 text-sm text-gray-500">
             No hay casos cerrados registrados.
@@ -109,10 +114,11 @@ export default function CasosCerrados() {
             </div>
           </div>
         ))}
+        </div>
       </div>
 
       {/* PANEL DERECHO */}
-      <div className="flex-1 bg-white border rounded-xl">
+      <div className="flex-1 bg-white border rounded-xl overflow-hidden flex flex-col">
         {!selectedCaso && (
           <div className="h-full flex items-center justify-center text-gray-400">
             Selecciona un caso cerrado para ver el informe
@@ -120,11 +126,13 @@ export default function CasosCerrados() {
         )}
 
         {selectedCaso && (
-          <SeguimientoPage
-            casoId={selectedCaso.id}
-            readOnly
-            showExport
-          />
+          <div className="flex-1 overflow-y-auto">
+            <SeguimientoPage
+              casoId={selectedCaso.id}
+              readOnly
+              showExport
+            />
+          </div>
         )}
       </div>
     </div>

@@ -20,9 +20,9 @@ export default function Layout() {
       <Sidebar />
 
       {/* CONTENIDO */}
-      <main className="flex-1 overflow-y-auto p-8">
+      <main className="flex-1 flex flex-col overflow-hidden">
         {/* HEADER SUPERIOR */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center p-8 pb-4 shrink-0">
           <h1 className="text-2xl font-bold text-gray-800">
             {getTitle()}
           </h1>
@@ -38,7 +38,9 @@ export default function Layout() {
         </div>
 
         {/* 👇 AQUÍ SE RENDERIZAN LAS PÁGINAS */}
-        <Outlet />
+        <div className="flex-1 overflow-y-auto px-8 pb-8">
+          <Outlet />
+        </div>
       </main>
     </div>
   )

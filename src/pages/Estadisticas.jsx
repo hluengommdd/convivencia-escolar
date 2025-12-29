@@ -212,6 +212,64 @@ export default function Estadisticas() {
       .sort((a, b) => b.total - a.total)
   }, [seguimientosFiltrados])
 
+  // Tiempo promedio por etapa del debido proceso
+  const tiempoPromedioEtapas = useMemo(() => {
+    const ETAPAS = [
+      { numero: 1, nombre: 'Medidas formativas' },
+      { numero: 2, nombre: 'Notificación a padres' },
+      { numero: 3, nombre: 'Investigación' },
+      { numero: 4, nombre: 'Resolución' },
+      { numero: 5, nombre: 'Aplicación de medidas' },
+      { numero: 6, nombre: 'Seguimiento' },
+      { numero: 7, nombre: 'Evaluación' },
+      { numero: 8, nombre: 'Cierre' }
+    ]
+
+    return ETAPAS.map(etapa => {
+      // Filtrar seguimientos de esta etapa
+      const seguimientosEtapa = seguimientosFiltrados.filter(s => {
+        const desc = s.fields?.Descripcion || ''
+        const regex = new RegExp(`Etapa\\s+${etapa.numero}`, 'i')
+        return regex.test(desc)
+      })
+
+      if (seguimientosEtapa.length === 0) {
+        return { etapa: etapa.nombre, promedio: 0, total: 0 }
+      }
+
+      // Calcular tiempo promedio desde inicio del caso
+      let sumaDias = 0
+      let conteo = 0
+
+      seguimientosEtapa.forEach(seg => {
+        const fechaSeg = safeDate(seg.fields?.Fecha)
+        if (!fechaSeg) return
+
+        // Buscar el caso asociado
+        const casoIds = seg.fields?.CASOS_ACTIVOS || []
+        const caso = casosFiltrados.find(c => casoIds.includes(c.id))
+        if (!caso) return
+
+        const fechaInicio = safeDate(caso.fields?.Fecha_Incidente)
+        if (!fechaInicio) return
+
+        const dias = daysBetween(fechaInicio, fechaSeg)
+        if (dias >= 0) {
+          sumaDias += dias
+          conteo++
+        }
+      })
+
+      const promedio = conteo > 0 ? Math.round((sumaDias / conteo) * 10) / 10 : 0
+
+      return { 
+        etapa: etapa.nombre, 
+        promedio, 
+        total: seguimientosEtapa.length 
+      }
+    }).filter(e => e.total > 0) // Solo mostrar etapas con datos
+  }, [seguimientosFiltrados, casosFiltrados])
+
   /* =========================
      GRÁFICOS (IGUALES A LOS TUYOS)
   ========================== */
@@ -242,6 +300,25 @@ export default function Estadisticas() {
     })
     return Object.keys(c).map(k => ({ curso: k, total: c[k] }))
   }, [casosFiltrados])
+
+  // Generar colores únicos por curso
+  const coloresCursos = useMemo(() => {
+    const cursos = dataCursos.map(d => d.curso)
+    const colores = {}
+    
+    // Paleta de colores vibrantes
+    const palette = [
+      '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6',
+      '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16',
+      '#6366f1', '#f43f5e', '#22c55e', '#eab308', '#a855f7'
+    ]
+    
+    cursos.forEach((curso, index) => {
+      colores[curso] = palette[index % palette.length]
+    })
+    
+    return colores
+  }, [dataCursos])
 
   /* =========================
      RENDER
@@ -409,12 +486,21 @@ export default function Estadisticas() {
           <h3>Casos por tipificación</h3>
           <ResponsiveContainer>
             <PieChart>
-              <Pie data={dataTipo} dataKey="value" nameKey="name" label>
+              <Pie 
+                data={dataTipo} 
+                dataKey="value" 
+                nameKey="name" 
+                outerRadius={80} 
+                label={(entry) => entry.name}
+                labelLine={false}
+              >
                 {dataTipo.map((_, i) => (
                   <Cell key={i} fill={COLORS[i % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip 
+                formatter={(value, name) => [`${value} casos`, name]}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -428,13 +514,57 @@ export default function Estadisticas() {
               <Tooltip />
               <Bar
                 dataKey="total"
-                fill="#ef4444"
                 onClick={d => setCursoSeleccionado(d.curso)}
-              />
+              >
+                {dataCursos.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={coloresCursos[entry.curso]} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* TIEMPO PROMEDIO POR ETAPA */}
+      {tiempoPromedioEtapas.length > 0 && (
+        <div className="bg-white border rounded-xl p-6">
+          <h2 className="font-semibold text-gray-900 mb-4">
+            Tiempo promedio por etapa del debido proceso
+          </h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={tiempoPromedioEtapas}>
+              <XAxis 
+                dataKey="etapa" 
+                angle={-45} 
+                textAnchor="end" 
+                height={100}
+                tick={{ fontSize: 11 }}
+              />
+              <YAxis 
+                label={{ value: 'Días promedio', angle: -90, position: 'insideLeft' }}
+              />
+              <Tooltip 
+                content={({ payload }) => {
+                  if (!payload?.[0]) return null
+                  const data = payload[0].payload
+                  return (
+                    <div className="bg-white border rounded shadow-lg p-3">
+                      <p className="font-semibold text-sm">{data.etapa}</p>
+                      <p className="text-sm text-gray-600">
+                        Promedio: <span className="font-bold">{data.promedio} días</span>
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Total seguimientos: {data.total}
+                      </p>
+                    </div>
+                  )
+                }}
+              />
+              <Bar dataKey="promedio" fill="#3b82f6" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   )
 }

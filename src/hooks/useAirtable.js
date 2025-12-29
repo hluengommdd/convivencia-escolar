@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getRecords } from '../api/airtable'
 
-export function useAirtable(table, view, filterFormula) {
+export function useAirtable(table, view, filterFormula, refreshTrigger = 0) {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -29,7 +29,7 @@ export function useAirtable(table, view, filterFormula) {
     return () => {
       mounted = false
     }
-  }, [table, view, filterFormula])
+  }, [table, view, filterFormula, refreshTrigger])
 
   return { data, loading, error }
 }

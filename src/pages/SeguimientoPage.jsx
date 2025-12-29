@@ -115,6 +115,14 @@ export default function SeguimientoPage({
     )
   }
 
+  if (!caso.fields) {
+    return (
+      <div className="p-6 text-red-600">
+        Error: El caso no tiene campos definidos.
+      </div>
+    )
+  }
+
   const esCerrado = caso.fields.Estado === 'Cerrado'
   const soloLectura = readOnly || esCerrado
 
@@ -193,31 +201,64 @@ export default function SeguimientoPage({
 
       {/* RESUMEN */}
       <div className="bg-white border rounded-xl p-4 grid grid-cols-2 gap-4 text-sm">
-        <p><strong>Estudiante:</strong> {caso.fields.Estudiante_Responsable}</p>
-        <p><strong>Curso:</strong> {caso.fields.Curso_Incidente}</p>
-        <p><strong>Fecha / Hora:</strong>{' '} {formatDate(caso.fields.Fecha_Incidente)} ·{' '} {caso.fields.Hora_Incidente}</p>
-        <p><strong>Tipificación:</strong> {caso.fields.Tipificacion_Conducta}</p>
-        <p><strong>Categoría:</strong> {caso.fields.Categoria_Conducta}</p>
+        <p><strong>Estudiante:</strong> {caso.fields.Estudiante_Responsable || 'N/A'}</p>
+        <p><strong>Curso:</strong> {caso.fields.Curso_Incidente || 'N/A'}</p>
+        <p><strong>Fecha / Hora:</strong>{' '} {caso.fields.Fecha_Incidente ? formatDate(caso.fields.Fecha_Incidente) : 'N/A'} ·{' '} {caso.fields.Hora_Incidente || 'N/A'}</p>
+        <p><strong>Tipificación:</strong> {caso.fields.Tipificacion_Conducta || 'N/A'}</p>
+        <p><strong>Categoría:</strong> {caso.fields.Categoria_Conducta || 'N/A'}</p>
         <p className="col-span-2"><strong>Descripción:</strong></p>
         <div className="col-span-2 break-words whitespace-pre-wrap text-sm">
-          {caso.fields.Descripcion_Breve}
+          {caso.fields.Descripcion_Breve || 'Sin descripción'}
+        </div>
+      </div>
+
+      {/* BOTÓN NUEVA ACCIÓN */}
+      {!soloLectura && !mostrarForm && (
+        <div className="bg-white border border-dashed border-gray-300 rounded-xl p-4 flex justify-center">
+          <button
+            onClick={() => setMostrarForm(true)}
+            className="px-6 py-3 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition"
+          >
+            + Nueva Acción
+          </button>
+        </div>
+      )}
+
+      {/* HISTORIAL DE SEGUIMIENTOS */}
+      <div className="bg-white border rounded-xl p-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">
+          Control de Plazos / Seguimientos
+        </h2>
+
+        {loadingSeg && (
+          <p className="text-sm text-gray-500">
+            Cargando seguimientos…
+          </p>
+        )}
+
+        {!loadingSeg && (seguimientos || []).length === 0 && (
+          <p className="text-sm text-gray-500">
+            No hay acciones registradas.
+          </p>
+        )}
+
+        <div className="space-y-4">
+          {(seguimientos || []).map(seg => (
+            <SeguimientoItem key={seg.id} seg={seg} />
+          ))}
         </div>
       </div>
 
       {/* VISUALIZADOR DE PROCESO */}
-      <ProcesoVisualizer seguimientos={seguimientos || []} />
-
-      {/* BOTÓN NUEVA ACCIÓN */}
-      {!soloLectura && !mostrarForm && (
-        <div className="flex justify-end">
-          <button
-            onClick={() => setMostrarForm(true)}
-            className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700"
-          >
-            Nueva Acción
-          </button>
-        </div>
-      )}
+      <div className="bg-white border rounded-xl p-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">
+          Progreso del Debido Proceso
+        </h2>
+        <ProcesoVisualizer 
+          seguimientos={seguimientos || []} 
+          fechaInicio={caso.fields.Fecha_Incidente || null}
+        />
+      </div>
 
       {/* MODAL */}
       {!soloLectura && mostrarForm && (
@@ -244,31 +285,6 @@ export default function SeguimientoPage({
           </div>
         </div>
       )}
-
-      {/* HISTORIAL */}
-      <div className="bg-white border rounded-xl p-4">
-        <h2 className="text-lg font-semibold mb-3">
-          Control de Plazos / Seguimientos
-        </h2>
-
-        {loadingSeg && (
-          <p className="text-sm text-gray-500">
-            Cargando…
-          </p>
-        )}
-
-        {!loadingSeg && (seguimientos || []).length === 0 && (
-          <p className="text-sm text-gray-500">
-            No hay acciones registradas.
-          </p>
-        )}
-
-        <div className="space-y-4">
-          {(seguimientos || []).map(seg => (
-            <SeguimientoItem key={seg.id} seg={seg} />
-          ))}
-        </div>
-      </div>
     </div>
   )
 }

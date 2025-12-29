@@ -16,13 +16,13 @@ export default function SeguimientoItem({ seg }) {
       <div className="absolute left-1.5 top-2 w-3 h-3 rounded-full bg-blue-500" />
 
       <div className="bg-white border rounded-lg p-4">
-        <div className="flex justify-between items-center">
-          <p className="font-semibold text-sm">
+        <div className="flex justify-between items-start">
+          <p className="text-base font-bold text-gray-900">
             {seg.fields?.Tipo_Accion}
           </p>
 
           <span
-            className={`text-xs px-2 py-1 rounded-full ${
+            className={`text-xs px-2 py-1 rounded-full font-semibold ${
               estadoColor[seg.fields?.Estado_Etapa] || 'bg-gray-100 text-gray-700'
             }`}
           >
@@ -30,19 +30,19 @@ export default function SeguimientoItem({ seg }) {
           </span>
         </div>
 
-        <p className="text-xs text-gray-500 mt-1">
-          {formatDate(seg.fields?.Fecha)} · Responsable:{' '}
+        <p className="text-sm text-gray-600 mt-2">
+          <strong>Fecha:</strong> {formatDate(seg.fields?.Fecha)} · <strong>Responsable:</strong>{' '}
           {seg.fields?.Responsable || '—'}
         </p>
 
         {seg.fields?.Detalle && (
-          <p className="text-sm text-gray-700 mt-2">
+          <p className="text-sm text-gray-700 mt-2 break-words whitespace-pre-wrap">
             {seg.fields.Detalle}
           </p>
         )}
 
         {seg.fields?.Observaciones && (
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-sm text-gray-600 mt-2 italic break-words whitespace-pre-wrap">
             {seg.fields.Observaciones}
           </p>
         )}

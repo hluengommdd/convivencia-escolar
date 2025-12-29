@@ -217,13 +217,21 @@ export default function Dashboard() {
           ) : (
             <ResponsiveContainer>
               <PieChart>
-                <Pie data={dataTipo} dataKey="value" nameKey="name" outerRadius={95} label>
+                <Pie 
+                  data={dataTipo} 
+                  dataKey="value" 
+                  nameKey="name" 
+                  outerRadius={80} 
+                  label={(entry) => entry.name}
+                  labelLine={false}
+                >
                   {dataTipo.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
-                <Legend />
+                <Tooltip 
+                  formatter={(value, name) => [`${value} casos`, name]}
+                />
               </PieChart>
             </ResponsiveContainer>
           )}
@@ -237,13 +245,23 @@ export default function Dashboard() {
           ) : (
             <ResponsiveContainer>
               <PieChart>
-                <Pie data={dataPlazos} dataKey="value" nameKey="name" outerRadius={95} label>
+                <Pie 
+                  data={dataPlazos} 
+                  dataKey="value" 
+                  nameKey="name" 
+                  outerRadius={80} 
+                  label={false}
+                >
                   <Cell fill="#ef4444" />
                   <Cell fill="#f97316" />
                   <Cell fill="#eab308" />
                 </Pie>
                 <Tooltip />
-                <Legend />
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36}
+                  wrapperStyle={{ fontSize: '12px' }}
+                />
               </PieChart>
             </ResponsiveContainer>
           )}

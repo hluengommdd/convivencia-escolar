@@ -1,9 +1,13 @@
-import { Clock } from 'lucide-react'
+import { Clock, Edit2, Save, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { updateRecord } from '../api/airtable'
+import { useState } from 'react'
 
 export default function CaseDetailPanel({ caso }) {
   const navigate = useNavigate()
+  const [editando, setEditando] = useState(false)
+  const [descripcion, setDescripcion] = useState(caso.fields.Descripcion_Breve || '')
+  const [guardando, setGuardando] = useState(false)
 
   async function iniciarSeguimiento() {
     try {
@@ -18,6 +22,31 @@ export default function CaseDetailPanel({ caso }) {
       console.error(e)
       alert('Error al iniciar seguimiento')
     }
+  }
+
+  async function guardarDescripcion() {
+    try {
+      setGuardando(true)
+      await updateRecord('CASOS_ACTIVOS', caso.id, {
+        Descripcion_Breve: descripcion
+      })
+      
+      // Actualizar el objeto caso localmente
+      caso.fields.Descripcion_Breve = descripcion
+      
+      setEditando(false)
+      alert('Descripción actualizada correctamente')
+    } catch (e) {
+      console.error(e)
+      alert('Error al guardar la descripción')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  function cancelarEdicion() {
+    setDescripcion(caso.fields.Descripcion_Breve || '')
+    setEditando(false)
   }
 
   return (
@@ -89,12 +118,53 @@ export default function CaseDetailPanel({ caso }) {
         </div>
 
         <div className="mb-8">
-          <h3 className="text-sm font-semibold text-gray-500 mb-2">
-            Descripción breve
-          </h3>
-          <div className="bg-gray-50 p-4 rounded-lg break-words whitespace-pre-wrap">
-            {caso.fields.Descripcion_Breve}
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-gray-500">
+              Descripción breve
+            </h3>
+            {!editando && (
+              <button
+                onClick={() => setEditando(true)}
+                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
+              >
+                <Edit2 size={14} />
+                Editar
+              </button>
+            )}
           </div>
+          
+          {editando ? (
+            <div className="space-y-2">
+              <textarea
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+                className="w-full p-3 border rounded-lg min-h-[120px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Escribe la descripción del caso..."
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={guardarDescripcion}
+                  disabled={guardando}
+                  className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50"
+                >
+                  <Save size={14} />
+                  {guardando ? 'Guardando...' : 'Guardar'}
+                </button>
+                <button
+                  onClick={cancelarEdicion}
+                  disabled={guardando}
+                  className="flex items-center gap-1 px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 disabled:opacity-50"
+                >
+                  <X size={14} />
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-gray-50 p-4 rounded-lg break-words whitespace-pre-wrap">
+              {caso.fields.Descripcion_Breve || 'Sin descripción'}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center bg-gray-50 p-4 rounded-lg text-gray-600">
