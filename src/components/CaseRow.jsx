@@ -16,33 +16,33 @@ export default function CaseRow({ caso, selected, onSelect }) {
   return (
     <div
       onClick={() => onSelect(caso)}
-      className={`grid grid-cols-6 gap-4 p-4 border rounded-lg cursor-pointer transition
-        ${selected ? 'ring-2 ring-red-500 bg-red-50' : 'bg-white hover:bg-gray-50'}`}
+      className={`grid grid-cols-6 gap-4 p-5 border rounded-2xl cursor-pointer transition-all duration-200
+        ${selected ? 'ring-2 ring-red-500 bg-gradient-to-br from-red-50 to-red-100/50 shadow-md' : 'bg-white hover:bg-gray-50 hover:shadow-sm'}`}
     >
-      <div className="text-sm font-medium">{caso.fields.ID_Caso}</div>
+      <div className="text-sm font-semibold text-gray-900">{caso.fields.ID_Caso}</div>
 
       <div className="text-sm">
         {caso.fields.Fecha_Incidente}
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-gray-500 mt-0.5">
           {caso.fields.Hora_Incidente}
         </div>
       </div>
 
-      <div className="text-sm break-words max-w-full">
+      <div className="text-sm break-words max-w-full font-medium text-gray-800">
         {caso.fields.Estudiante_Responsable}
       </div>
 
-      <div className="text-sm break-words max-w-full whitespace-pre-wrap">
+      <div className="text-sm break-words max-w-full whitespace-pre-wrap text-gray-700">
         {caso.fields.Categoria_Conducta}
       </div>
 
       <span
-        className={`text-xs font-semibold px-2 py-1 rounded-full w-fit ${gravedad.color}`}
+        className={`text-xs font-semibold px-3 py-1.5 rounded-xl w-fit shadow-sm ${gravedad.color}`}
       >
         {gravedad.label}
       </span>
 
-      <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700 w-fit">
+      <span className="text-xs px-3 py-1.5 rounded-xl bg-gray-100 text-gray-700 w-fit font-medium shadow-sm">
         {caso.fields.Estado}
       </span>
     </div>

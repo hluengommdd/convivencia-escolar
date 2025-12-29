@@ -149,12 +149,12 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-gray-600 font-medium">
         Resumen Operativo de Convivencia Escolar · Año lectivo 2025
       </p>
 
       {/* KPIs – FILA 1 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
           title="Atención Prioritaria"
           value={casosUrgentes.length}
@@ -181,7 +181,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPIs – FILA 2 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
           title="Casos en curso"
           value={totalActivos}
@@ -209,8 +209,8 @@ export default function Dashboard() {
 
       {/* GRÁFICOS */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="bg-white border rounded-xl p-6">
-          <h3 className="font-semibold mb-3">Casos activos por tipificación</h3>
+        <div className="bg-white border border-gray-200/50 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <h3 className="font-semibold text-gray-900 mb-4">Casos activos por tipificación</h3>
 
           {dataTipo.length === 0 ? (
             <p className="text-sm text-gray-500">Sin datos para graficar.</p>
@@ -237,8 +237,8 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="bg-white border rounded-xl p-6">
-          <h3 className="font-semibold mb-3">Estado de plazos (Control de Plazos)</h3>
+        <div className="bg-white border border-gray-200/50 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <h3 className="font-semibold text-gray-900 mb-4">Estado de plazos (Control de Plazos)</h3>
 
           {dataPlazos.every(x => x.value === 0) ? (
             <p className="text-sm text-gray-500">No hay alertas para graficar.</p>
@@ -267,8 +267,8 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="bg-white border rounded-xl p-6">
-          <h3 className="font-semibold mb-3">Casos activos por curso (Top 10)</h3>
+        <div className="bg-white border border-gray-200/50 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <h3 className="font-semibold text-gray-900 mb-4">Casos activos por curso (Top 10)</h3>
 
           {dataCurso.length === 0 ? (
             <p className="text-sm text-gray-500">Sin datos para graficar.</p>
@@ -289,7 +289,7 @@ export default function Dashboard() {
       {/* BLOQUES OPERATIVOS */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* CASOS URGENTES */}
-        <div className="xl:col-span-2 bg-white border rounded-xl p-6">
+        <div className="xl:col-span-2 bg-white border border-gray-200/50 rounded-2xl p-6 shadow-sm">
           <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <AlertTriangle size={18} className="text-red-600" />
             Casos que requieren atención inmediata
@@ -321,7 +321,7 @@ export default function Dashboard() {
         </div>
 
         {/* ALERTAS DE PLAZOS (clic → Seguimiento) */}
-        <div className="bg-white border rounded-xl p-6">
+        <div className="bg-white border border-gray-200/50 rounded-2xl p-6 shadow-sm">
           <h2 className="font-semibold text-gray-900 mb-4">Alertas de Plazos</h2>
 
           {topAlertas.length === 0 ? (

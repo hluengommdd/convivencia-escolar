@@ -13,18 +13,18 @@ import logoColegio from '../assets/veritas.jpg'
 
 export default function Sidebar() {
   const linkClass =
-    'flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition'
+    'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200'
 
   const activeClass =
-    'bg-red-50 text-red-600'
+    'bg-gradient-to-r from-red-50 to-red-100 text-red-600 shadow-sm'
 
   const inactiveClass =
-    'text-gray-600 hover:bg-gray-100'
+    'text-gray-600 hover:bg-gray-50 hover:shadow-sm hover:translate-x-1'
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
+    <aside className="w-64 bg-white border-r border-gray-200/50 flex flex-col shadow-xl">
       {/* HEADER CON LOGO */}
-      <div className="p-6 border-b flex items-center gap-3">
+      <div className="p-6 border-b border-gray-200/50 flex items-center gap-3 bg-gradient-to-br from-white to-gray-50">
         <img
           src={logoColegio}
           alt="Logo Colegio"

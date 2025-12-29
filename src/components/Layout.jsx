@@ -15,19 +15,19 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
       {/* SIDEBAR */}
       <Sidebar />
 
       {/* CONTENIDO */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* HEADER SUPERIOR */}
-        <div className="flex justify-between items-center p-8 pb-4 shrink-0">
-          <h1 className="text-2xl font-bold text-gray-800">
+        <div className="flex justify-between items-center p-8 pb-4 shrink-0 bg-white/50 backdrop-blur-sm border-b border-gray-200/50">
+          <h1 className="text-3xl font-bold text-gray-800 tracking-tight">
             {getTitle()}
           </h1>
 
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-600 font-medium">
             {new Date().toLocaleDateString('es-CL', {
               weekday: 'long',
               day: 'numeric',

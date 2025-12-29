@@ -12,7 +12,9 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { pdf } from '@react-pdf/renderer'
 import { useAirtable } from '../hooks/useAirtable'
+import EstadisticasDocument from '../components/EstadisticasDocument'
 
 const COLORS = ['#ef4444', '#f59e0b', '#3b82f6', '#10b981']
 
@@ -326,6 +328,44 @@ export default function Estadisticas() {
 
   if (hasError) return <p className="text-red-500">Error al cargar datos</p>
 
+  /* =========================
+     EXPORT PDF
+  ========================== */
+
+  const handleExportPDF = async () => {
+    try {
+      const blob = await pdf(
+        <EstadisticasDocument
+          kpi={kpi}
+          cumplimientoPlazo={cumplimientoPlazo}
+          fueraDePlazo={fueraDePlazo}
+          seguimientosConPlazo={seguimientosConPlazo}
+          reincidencia={reincidencia}
+          cargaPorResponsable={cargaPorResponsable}
+          tiempoPromedioEtapas={tiempoPromedioEtapas}
+          dataTipo={dataTipo}
+          dataCursos={dataCursos}
+          filtros={{
+            desde,
+            hasta,
+            semestre,
+            curso: cursoSeleccionado || 'Todos'
+          }}
+        />
+      ).toBlob()
+
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Estadisticas_${anio}_${new Date().toISOString().slice(0, 10)}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Error al generar PDF:', err)
+      alert('Error al generar el PDF')
+    }
+  }
+
   return (
     <div className="space-y-8 print-container">
       <div className="flex justify-between items-start">
@@ -333,8 +373,8 @@ export default function Estadisticas() {
           Estadísticas de Convivencia Escolar
         </h1>
         <button
-          onClick={() => window.print()}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+          onClick={handleExportPDF}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm"
         >
           Exportar PDF
         </button>

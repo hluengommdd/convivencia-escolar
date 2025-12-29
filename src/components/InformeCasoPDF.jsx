@@ -1,17 +1,28 @@
 import SeguimientoItem from './SeguimientoItem'
+import logoColegio from '../assets/veritas.jpg'
 
 export default function InformeCasoPDF({ caso, seguimientos }) {
   return (
     <div className="p-10 text-black font-sans">
       {/* ENCABEZADO */}
-      <div className="border-b pb-4 mb-6">
-        <h1 className="text-2xl font-bold">
-          INFORME DE CIERRE DE CASO
-        </h1>
-        <p className="text-sm mt-1">
-          Fecha de emisión:{' '}
-          {new Date().toLocaleDateString()}
-        </p>
+      <div className="border-b pb-4 mb-6 flex items-start justify-between">
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold">
+            INFORME DE CIERRE DE CASO
+          </h1>
+          <p className="text-sm mt-2 font-medium text-gray-700">
+            Colegio Carmera Romero de Espinoza - MMDD Concepción
+          </p>
+          <p className="text-sm mt-1">
+            Fecha de emisión:{' '}
+            {new Date().toLocaleDateString()}
+          </p>
+        </div>
+        <img
+          src={logoColegio}
+          alt="Logo MMDD"
+          className="w-16 h-16 object-contain"
+        />
       </div>
 
       {/* IDENTIFICACIÓN */}
