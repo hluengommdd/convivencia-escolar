@@ -472,7 +472,7 @@ export default function Estadisticas() {
       <div className="grid grid-cols-2 gap-6">
         <div className="bg-white border p-4 min-h-[18rem] rounded">
           <h3>Casos por mes</h3>
-          <ResponsiveContainer>
+          <ResponsiveContainer width="100%" height="100%">
             <LineChart data={dataMes}>
               <XAxis dataKey="mes" />
               <YAxis />
@@ -484,7 +484,7 @@ export default function Estadisticas() {
 
         <div className="bg-white border p-4 min-h-[18rem] rounded">
           <h3>Casos por tipificación</h3>
-          <ResponsiveContainer>
+          <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie 
                 data={dataTipo} 
@@ -507,7 +507,7 @@ export default function Estadisticas() {
 
         <div className="bg-white border p-4 min-h-[18rem] rounded col-span-2">
           <h3>Casos por curso</h3>
-          <ResponsiveContainer>
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart data={dataCursos}>
               <XAxis dataKey="curso" />
               <YAxis />

@@ -215,7 +215,7 @@ export default function Dashboard() {
           {dataTipo.length === 0 ? (
             <p className="text-sm text-gray-500">Sin datos para graficar.</p>
           ) : (
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie 
                   data={dataTipo} 
@@ -243,7 +243,7 @@ export default function Dashboard() {
           {dataPlazos.every(x => x.value === 0) ? (
             <p className="text-sm text-gray-500">No hay alertas para graficar.</p>
           ) : (
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie 
                   data={dataPlazos} 
@@ -273,7 +273,7 @@ export default function Dashboard() {
           {dataCurso.length === 0 ? (
             <p className="text-sm text-gray-500">Sin datos para graficar.</p>
           ) : (
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dataCurso} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="curso" tick={{ fontSize: 11 }} />
