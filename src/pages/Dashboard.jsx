@@ -209,14 +209,15 @@ export default function Dashboard() {
 
       {/* GRÁFICOS */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="bg-white border rounded-xl p-6 h-80">
+        <div className="bg-white border rounded-xl p-6">
           <h3 className="font-semibold mb-3">Casos activos por tipificación</h3>
 
           {dataTipo.length === 0 ? (
             <p className="text-sm text-gray-500">Sin datos para graficar.</p>
           ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
+            <div style={{ width: '100%', height: '280px' }}>
+              <ResponsiveContainer>
+                <PieChart>
                 <Pie 
                   data={dataTipo} 
                   dataKey="value" 
@@ -234,17 +235,19 @@ export default function Dashboard() {
                 />
               </PieChart>
             </ResponsiveContainer>
+            </div>
           )}
         </div>
 
-        <div className="bg-white border rounded-xl p-6 h-80">
+        <div className="bg-white border rounded-xl p-6">
           <h3 className="font-semibold mb-3">Estado de plazos (Control de Plazos)</h3>
 
           {dataPlazos.every(x => x.value === 0) ? (
             <p className="text-sm text-gray-500">No hay alertas para graficar.</p>
           ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
+            <div style={{ width: '100%', height: '280px' }}>
+              <ResponsiveContainer>
+                <PieChart>
                 <Pie 
                   data={dataPlazos} 
                   dataKey="value" 
@@ -264,17 +267,19 @@ export default function Dashboard() {
                 />
               </PieChart>
             </ResponsiveContainer>
+            </div>
           )}
         </div>
 
-        <div className="bg-white border rounded-xl p-6 h-80">
+        <div className="bg-white border rounded-xl p-6">
           <h3 className="font-semibold mb-3">Casos activos por curso (Top 10)</h3>
 
           {dataCurso.length === 0 ? (
             <p className="text-sm text-gray-500">Sin datos para graficar.</p>
           ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dataCurso} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+            <div style={{ width: '100%', height: '280px' }}>
+              <ResponsiveContainer>
+                <BarChart data={dataCurso} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="curso" tick={{ fontSize: 11 }} />
                 <YAxis allowDecimals={false} />
@@ -282,6 +287,7 @@ export default function Dashboard() {
                 <Bar dataKey="total" />
               </BarChart>
             </ResponsiveContainer>
+            </div>
           )}
         </div>
       </div>

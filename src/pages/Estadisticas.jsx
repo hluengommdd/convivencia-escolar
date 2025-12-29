@@ -470,22 +470,25 @@ export default function Estadisticas() {
 
       {/* GRÁFICOS (LOS TUYOS) */}
       <div className="grid grid-cols-2 gap-6">
-        <div className="bg-white border p-4 min-h-[18rem] rounded">
+        <div className="bg-white border p-4 rounded">
           <h3>Casos por mes</h3>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={dataMes}>
+          <div style={{ width: '100%', height: '250px' }}>
+            <ResponsiveContainer>
+              <LineChart data={dataMes}>
               <XAxis dataKey="mes" />
               <YAxis />
               <Tooltip />
               <Line dataKey="total" />
             </LineChart>
           </ResponsiveContainer>
+          </div>
         </div>
 
-        <div className="bg-white border p-4 min-h-[18rem] rounded">
+        <div className="bg-white border p-4 rounded">
           <h3>Casos por tipificación</h3>
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
+          <div style={{ width: '100%', height: '250px' }}>
+            <ResponsiveContainer>
+              <PieChart>
               <Pie 
                 data={dataTipo} 
                 dataKey="value" 
@@ -503,12 +506,14 @@ export default function Estadisticas() {
               />
             </PieChart>
           </ResponsiveContainer>
+          </div>
         </div>
 
-        <div className="bg-white border p-4 min-h-[18rem] rounded col-span-2">
+        <div className="bg-white border p-4 rounded col-span-2">
           <h3>Casos por curso</h3>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={dataCursos}>
+          <div style={{ width: '100%', height: '250px' }}>
+            <ResponsiveContainer>
+              <BarChart data={dataCursos}>
               <XAxis dataKey="curso" />
               <YAxis />
               <Tooltip />
@@ -522,6 +527,7 @@ export default function Estadisticas() {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
