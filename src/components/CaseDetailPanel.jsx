@@ -92,7 +92,7 @@ export default function CaseDetailPanel({ caso }) {
           <h3 className="text-sm font-semibold text-gray-500 mb-2">
             Descripción breve
           </h3>
-          <div className="bg-gray-50 p-4 rounded-lg">
+          <div className="bg-gray-50 p-4 rounded-lg break-words whitespace-pre-wrap">
             {caso.fields.Descripcion_Breve}
           </div>
         </div>

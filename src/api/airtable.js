@@ -1,6 +1,13 @@
 const BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID
 const API_KEY = import.meta.env.VITE_AIRTABLE_API_KEY
 
+if (!BASE_ID || !API_KEY) {
+  console.error('Airtable: faltan variables de entorno VITE_AIRTABLE_BASE_ID / VITE_AIRTABLE_API_KEY')
+  throw new Error(
+    'Airtable config: define VITE_AIRTABLE_BASE_ID and VITE_AIRTABLE_API_KEY in a .env.local file (see README)'
+  )
+}
+
 const BASE_URL = `https://api.airtable.com/v0/${BASE_ID}`
 
 const headers = {
@@ -53,7 +60,8 @@ export async function getRecord(table, recordId) {
 
 // 🔹 CREAR REGISTRO
 export async function createRecord(table, fields) {
-  const res = await fetch(`${BASE_URL}/${encodeURIComponent(table)}`, {
+  const url = `${BASE_URL}/${encodeURIComponent(table)}`
+  const res = await fetch(url, {
     method: 'POST',
     headers,
     body: JSON.stringify({ fields }),

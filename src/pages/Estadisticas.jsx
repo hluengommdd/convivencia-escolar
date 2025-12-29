@@ -252,16 +252,94 @@ export default function Estadisticas() {
 
   return (
     <div className="space-y-8 print-container">
-      <div className="flex justify-between">
+      <div className="flex justify-between items-start">
         <h1 className="text-2xl font-bold">
           Estadísticas de Convivencia Escolar
         </h1>
         <button
           onClick={() => window.print()}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
         >
           Exportar PDF
         </button>
+      </div>
+
+      {/* FILTROS */}
+      <div className="bg-white border rounded-xl p-6">
+        <h2 className="font-semibold text-gray-900 mb-4">Filtros</h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Año
+            </label>
+            <select
+              value={anio}
+              onChange={e => setAnio(e.target.value)}
+              className="w-full border rounded px-3 py-2"
+            >
+              <option value="">Todos</option>
+              {aniosDisponibles.map(y => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Semestre
+            </label>
+            <select
+              value={semestre}
+              onChange={e => setSemestre(e.target.value)}
+              className="w-full border rounded px-3 py-2"
+              disabled={!anio}
+            >
+              <option value="Todos">Año completo</option>
+              <option value="1">Primer semestre</option>
+              <option value="2">Segundo semestre</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Desde
+            </label>
+            <input
+              type="date"
+              value={desde}
+              onChange={e => setDesde(e.target.value)}
+              className="w-full border rounded px-3 py-2"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Hasta
+            </label>
+            <input
+              type="date"
+              value={hasta}
+              onChange={e => setHasta(e.target.value)}
+              className="w-full border rounded px-3 py-2"
+            />
+          </div>
+        </div>
+
+        {cursoSeleccionado && (
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-sm text-gray-600">
+              Filtrando por curso: <strong>{cursoSeleccionado}</strong>
+            </span>
+            <button
+              onClick={() => setCursoSeleccionado(null)}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              Limpiar filtro
+            </button>
+          </div>
+        )}
       </div>
 
       {/* KPI OPERATIVOS */}

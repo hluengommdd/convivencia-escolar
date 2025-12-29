@@ -28,11 +28,11 @@ export default function CaseRow({ caso, selected, onSelect }) {
         </div>
       </div>
 
-      <div className="text-sm truncate">
+      <div className="text-sm break-words max-w-full">
         {caso.fields.Estudiante_Responsable}
       </div>
 
-      <div className="text-sm truncate">
+      <div className="text-sm break-words max-w-full whitespace-pre-wrap">
         {caso.fields.Categoria_Conducta}
       </div>
 

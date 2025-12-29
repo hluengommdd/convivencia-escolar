@@ -18,7 +18,7 @@ export default function InformeCasoPDF({ caso, seguimientos }) {
       <h2 className="text-lg font-semibold mt-6 mb-2">
         1. Identificación del Caso
       </h2>
-      <div className="border p-4 mb-4 text-sm">
+      <div className="border p-4 mb-4 text-sm break-words whitespace-pre-wrap">
         <p><strong>ID Caso:</strong> {caso.fields.ID_Caso}</p>
         <p><strong>Estudiante:</strong> {caso.fields.Estudiante_Responsable}</p>
         <p><strong>Curso:</strong> {caso.fields.Curso_Incidente}</p>
@@ -32,7 +32,7 @@ export default function InformeCasoPDF({ caso, seguimientos }) {
       <h2 className="text-lg font-semibold mt-6 mb-2">
         2. Descripción del Hecho
       </h2>
-      <div className="border p-4 mb-4 text-sm">
+      <div className="border p-4 mb-4 text-sm break-words whitespace-pre-wrap">
         {caso.fields.Descripcion_Breve}
       </div>
 

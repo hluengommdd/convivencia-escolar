@@ -16,23 +16,25 @@ export function useSeguimientos(casoId, refreshKey = 0) {
       try {
         setLoading(true)
 
-        // ✅ FILTRADO DIRECTO EN AIRTABLE
-        const formula = `FIND("${casoId}", ARRAYJOIN(CASOS_ACTIVOS))`
+        // ✅ OBTENER TODOS LOS SEGUIMIENTOS Y FILTRAR EN EL CLIENTE
+        // No pasar una vista para evitar que una vista con filtros o campos ocultos
+        // impida que recuperemos registros vinculados a casos cerrados.
+        const allRecords = await getRecords('SEGUIMIENTOS', null)
 
-        const records = await getRecords(
-          'SEGUIMIENTOS',
-          null,
-          formula
-        )
+        // 🔹 FILTRAR EN EL CLIENTE por CASOS_ACTIVOS
+        const filtered = allRecords.filter(record => {
+          const casosIds = record.fields?.CASOS_ACTIVOS || []
+          return casosIds.includes(casoId)
+        })
 
         // 🔹 Orden cronológico
-        records.sort(
+        filtered.sort(
           (a, b) =>
             new Date(a.fields.Fecha) -
             new Date(b.fields.Fecha)
         )
 
-        setData(records)
+        setData(filtered)
       } catch (e) {
         console.error(e)
         setData([])

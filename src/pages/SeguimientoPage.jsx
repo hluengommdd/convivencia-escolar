@@ -5,6 +5,8 @@ import { useSeguimientos } from '../hooks/useSeguimientos'
 import SeguimientoForm from '../components/SeguimientoForm'
 import SeguimientoItem from '../components/SeguimientoItem'
 import InformeCasoPDF from '../components/InformeCasoPDF'
+import InformeCasoDocument from '../components/InformeCasoDocument'
+import { pdf } from '@react-pdf/renderer'
 import { formatDate } from '../utils/formatDate'
 
 export default function SeguimientoPage({
@@ -142,10 +144,28 @@ export default function SeguimientoPage({
 
           {showExport && (
             <button
-              onClick={() => {
-                setMostrarPDF(true)
-                setTimeout(() => window.print(), 300)
-                setTimeout(() => setMostrarPDF(false), 1000)
+              onClick={async () => {
+                try {
+                  const doc = (
+                    <InformeCasoDocument
+                      caso={caso}
+                      seguimientos={seguimientos || []}
+                    />
+                  )
+
+                  const blob = await pdf(doc).toBlob()
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `Informe_Caso_${caso.fields?.ID_Caso || caso.id}.pdf`
+                  document.body.appendChild(a)
+                  a.click()
+                  a.remove()
+                  URL.revokeObjectURL(url)
+                } catch (e) {
+                  console.error(e)
+                  alert('Error al generar PDF')
+                }
               }}
               className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
             >
@@ -153,18 +173,20 @@ export default function SeguimientoPage({
             </button>
           )}
 
-          <button
-            onClick={() =>
-              navigate(
-                soloLectura
-                  ? '/casos-cerrados'
-                  : '/casos-activos'
-              )
-            }
-            className="px-3 py-2 text-sm border rounded hover:bg-gray-50"
-          >
-            Volver
-          </button>
+          {!esCerrado && (
+            <button
+              onClick={() =>
+                navigate(
+                  soloLectura
+                    ? '/casos-cerrados'
+                    : '/casos-activos'
+                )
+              }
+              className="px-3 py-2 text-sm border rounded hover:bg-gray-50"
+            >
+              Volver
+            </button>
+          )}
         </div>
       </div>
 
@@ -175,9 +197,10 @@ export default function SeguimientoPage({
         <p><strong>Fecha / Hora:</strong>{' '} {formatDate(caso.fields.Fecha_Incidente)} ·{' '} {caso.fields.Hora_Incidente}</p>
         <p><strong>Tipificación:</strong> {caso.fields.Tipificacion_Conducta}</p>
         <p><strong>Categoría:</strong> {caso.fields.Categoria_Conducta}</p>
-        <p className="col-span-2">
-          <strong>Descripción:</strong> {caso.fields.Descripcion_Breve}
-        </p>
+        <p className="col-span-2"><strong>Descripción:</strong></p>
+        <div className="col-span-2 break-words whitespace-pre-wrap text-sm">
+          {caso.fields.Descripcion_Breve}
+        </div>
       </div>
 
       {/* BOTÓN NUEVA ACCIÓN */}

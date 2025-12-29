@@ -26,9 +26,10 @@ export default function SeguimientoForm({ casoId, onSaved }) {
       plazo.setDate(plazo.getDate() + 14)
       const fechaPlazoISO = plazo.toISOString().slice(0, 10)
 
+      // Nota: `Fecha_Plazo` es un campo calculado en Airtable (no aceptar valores),
+      // por eso lo omitimos de la carga. Airtable calculará el valor automáticamente.
       await createRecord('SEGUIMIENTOS', {
         Fecha: fechaISO,
-        Fecha_Plazo: fechaPlazoISO,
         Tipo_Accion: tipoAccion,
         Etapa_Debido_Proceso: etapa,
         Estado_Etapa: estado,
