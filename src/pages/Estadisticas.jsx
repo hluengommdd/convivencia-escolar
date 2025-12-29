@@ -324,7 +324,6 @@ export default function Estadisticas() {
      RENDER
   ========================== */
 
-  if (isLoading) return <p className="text-gray-500">Cargando estadísticas…</p>
   if (hasError) return <p className="text-red-500">Error al cargar datos</p>
 
   return (
