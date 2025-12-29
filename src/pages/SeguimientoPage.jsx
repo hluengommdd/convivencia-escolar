@@ -6,6 +6,7 @@ import SeguimientoForm from '../components/SeguimientoForm'
 import SeguimientoItem from '../components/SeguimientoItem'
 import InformeCasoPDF from '../components/InformeCasoPDF'
 import InformeCasoDocument from '../components/InformeCasoDocument'
+import ProcesoVisualizer from '../components/ProcesoVisualizer'
 import { pdf } from '@react-pdf/renderer'
 import { formatDate } from '../utils/formatDate'
 
@@ -202,6 +203,9 @@ export default function SeguimientoPage({
           {caso.fields.Descripcion_Breve}
         </div>
       </div>
+
+      {/* VISUALIZADOR DE PROCESO */}
+      <ProcesoVisualizer seguimientos={seguimientos || []} />
 
       {/* BOTÓN NUEVA ACCIÓN */}
       {!soloLectura && !mostrarForm && (
