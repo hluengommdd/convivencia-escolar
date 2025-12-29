@@ -44,6 +44,45 @@ npm run dev
 npm run build
 ```
 
+## Evidencias en Google Drive (subida de archivos)
+
+Para adjuntar imágenes o documentos como respaldo en una acción de seguimiento, la app puede subir archivos a **Google Drive** y guardar los enlaces en el campo de observaciones.
+
+### Requisitos
+
+- Crear un proyecto en **Google Cloud** y habilitar la API de **Google Drive**.
+- Crear un **OAuth Client ID** (tipo: Web application) y agregar los orígenes autorizados (por ejemplo, `http://localhost:5173` o el puerto actual que use Vite).
+- Agregar al archivo `.env.local`:
+
+```bash
+VITE_GOOGLE_CLIENT_ID=tu_client_id.apps.googleusercontent.com
+VITE_GOOGLE_DRIVE_FOLDER_ID=opcional_id_de_carpeta
+```
+
+### Cómo funciona en la app
+
+- En `src/components/SeguimientoForm.jsx` se agrega un input de archivos. Al guardar la acción:
+	- Se solicita un token mediante **Google Identity Services**.
+	- Se sube cada archivo a Drive (opcionalmente dentro de `VITE_GOOGLE_DRIVE_FOLDER_ID`).
+	- Se establece permiso de lectura “cualquiera con el enlace” para facilitar la visualización.
+	- Los enlaces (`webViewLink`) se añaden automáticamente en el texto de Observaciones bajo el título “Evidencias:”.
+
+### Archivo de ayuda
+
+- Lógica de subida y permisos: [src/api/googleDrive.js](src/api/googleDrive.js)
+
+### Carpeta por caso (organización)
+
+- La app puede crear automáticamente una **carpeta por caso** dentro de la carpeta base definida en `VITE_GOOGLE_DRIVE_FOLDER_ID`.
+- El nombre por defecto es `CASO_<recordId>`; puedes ajustar el rótulo pasando `caseLabel`.
+- El `folderId` usado se puede guardar en el caso (campo `Drive_Folder_ID`) para reutilizarlo en futuras subidas.
+
+### Privacidad y permisos
+
+- Por defecto los archivos quedan accesibles “con enlace”. Si prefieres restringir, elimina o ajusta la creación de permisos en `googleDrive.js`.
+- Puedes definir una **carpeta específica** con `VITE_GOOGLE_DRIVE_FOLDER_ID` para separar la documentación de convivencia escolar.
+
+
 ## Uso sugerido en la escuela
 
 - Uso diario por **Encargado/a de Convivencia** y dupla psicosocial para registrar incidentes y acciones.[8][1]

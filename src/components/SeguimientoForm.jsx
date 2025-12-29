@@ -122,6 +122,8 @@ export default function SeguimientoForm({ casoId, onSaved }) {
         className="w-full border rounded p-2 min-h-[80px]"
       />
 
+      
+
       <button
         type="submit"
         disabled={loading}
