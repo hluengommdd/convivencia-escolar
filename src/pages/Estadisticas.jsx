@@ -473,7 +473,7 @@ export default function Estadisticas() {
         <div className="bg-white border p-4 rounded">
           <h3>Casos por mes</h3>
           <div style={{ width: '100%', height: '250px' }}>
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart data={dataMes}>
               <XAxis dataKey="mes" />
               <YAxis />
@@ -487,7 +487,7 @@ export default function Estadisticas() {
         <div className="bg-white border p-4 rounded">
           <h3>Casos por tipificación</h3>
           <div style={{ width: '100%', height: '250px' }}>
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
               <Pie 
                 data={dataTipo} 
@@ -512,7 +512,7 @@ export default function Estadisticas() {
         <div className="bg-white border p-4 rounded col-span-2">
           <h3>Casos por curso</h3>
           <div style={{ width: '100%', height: '250px' }}>
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dataCursos}>
               <XAxis dataKey="curso" />
               <YAxis />
