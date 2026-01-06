@@ -179,7 +179,7 @@ export default function InformeCasoDocument({ caso, seguimientos = [] }) {
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Categoría:</Text>
-              <Text style={styles.value}>{caso?.fields?.Categoria_Conducta}</Text>
+              <Text style={styles.value}>{caso?.fields?.Categoria}</Text>
             </View>
           </View>
         </View>
@@ -188,7 +188,7 @@ export default function InformeCasoDocument({ caso, seguimientos = [] }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>2. Descripción del Hecho</Text>
           <View style={styles.descriptionBox}>
-            <Text>{caso?.fields?.Descripcion_Breve}</Text>
+            <Text>{caso?.fields?.Descripcion || 'Sin descripción registrada.'}</Text>
           </View>
         </View>
 

@@ -1,18 +1,18 @@
 import { Clock, Edit2, Save, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { updateRecord } from '../api/airtable'
+import { updateCase } from '../api/db'
 import { useState } from 'react'
 
 export default function CaseDetailPanel({ caso }) {
   const navigate = useNavigate()
   const [editando, setEditando] = useState(false)
-  const [descripcion, setDescripcion] = useState(caso.fields.Descripcion_Breve || '')
+  const [descripcion, setDescripcion] = useState(caso.fields.Descripcion || '')
   const [guardando, setGuardando] = useState(false)
 
   async function iniciarSeguimiento() {
     try {
       // 1️⃣ Cambiar estado del caso
-      await updateRecord('CASOS_ACTIVOS', caso.id, {
+      await updateCase(caso.id, {
         Estado: 'En Seguimiento',
       })
 
@@ -27,12 +27,12 @@ export default function CaseDetailPanel({ caso }) {
   async function guardarDescripcion() {
     try {
       setGuardando(true)
-      await updateRecord('CASOS_ACTIVOS', caso.id, {
-        Descripcion_Breve: descripcion
+      await updateCase(caso.id, {
+        Descripcion: descripcion
       })
       
       // Actualizar el objeto caso localmente
-      caso.fields.Descripcion_Breve = descripcion
+      caso.fields.Descripcion = descripcion
       
       setEditando(false)
       alert('Descripción actualizada correctamente')
@@ -45,7 +45,7 @@ export default function CaseDetailPanel({ caso }) {
   }
 
   function cancelarEdicion() {
-    setDescripcion(caso.fields.Descripcion_Breve || '')
+    setDescripcion(caso.fields.Descripcion || '')
     setEditando(false)
   }
 
@@ -162,7 +162,7 @@ export default function CaseDetailPanel({ caso }) {
             </div>
           ) : (
             <div className="bg-gray-50 p-4 rounded-lg break-words whitespace-pre-wrap">
-              {caso.fields.Descripcion_Breve || 'Sin descripción'}
+              {caso.fields.Descripcion || 'Sin descripción'}
             </div>
           )}
         </div>

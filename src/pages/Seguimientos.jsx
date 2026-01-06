@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getRecords } from '../api/airtable'
+import { getCases } from '../api/db'
 import SeguimientoPage from './SeguimientoPage'
 import { formatDate } from '../utils/formatDate'
 
@@ -7,12 +7,13 @@ export default function Seguimientos() {
   const [casos, setCasos] = useState([])
   const [selectedCaso, setSelectedCaso] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     async function cargar() {
       try {
         setLoading(true)
-        const data = await getRecords('CASOS_ACTIVOS')
+        const data = await getCases()
 
         // ✅ SOLO CASOS EN SEGUIMIENTO (EXCLUYE CERRADOS)
         const enSeguimiento = data.filter(
@@ -28,7 +29,7 @@ export default function Seguimientos() {
     }
 
     cargar()
-  }, [])
+  }, [refreshKey])
 
   return (
     <div className="flex gap-6">
@@ -126,7 +127,14 @@ export default function Seguimientos() {
         )}
 
         {selectedCaso && (
-          <SeguimientoPage casoId={selectedCaso.id} />
+          <SeguimientoPage
+            casoId={selectedCaso.id}
+            onDataChange={() => setRefreshKey(k => k + 1)}
+            onCaseClosed={() => {
+              setSelectedCaso(null)
+              setRefreshKey(k => k + 1)
+            }}
+          />
         )}
       </div>
     </div>

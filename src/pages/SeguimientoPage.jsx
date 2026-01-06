@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { getRecord, updateRecord, createRecord } from '../api/airtable'
+import { getCase, updateCase, createFollowup } from '../api/db'
+import { emitDataUpdated } from '../utils/refreshBus'
 import { useSeguimientos } from '../hooks/useSeguimientos'
 import SeguimientoForm from '../components/SeguimientoForm'
 import SeguimientoItem from '../components/SeguimientoItem'
-import InformeCasoPDF from '../components/InformeCasoPDF'
-import InformeCasoDocument from '../components/InformeCasoDocument'
 import ProcesoVisualizer from '../components/ProcesoVisualizer'
-import { pdf } from '@react-pdf/renderer'
 import { formatDate } from '../utils/formatDate'
+import { useToast } from '../hooks/useToast'
 
 export default function SeguimientoPage({
   casoId: casoIdProp,
   readOnly = false,
   showExport = false,
+  onCaseClosed,
+  onDataChange,
 }) {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -25,9 +26,7 @@ export default function SeguimientoPage({
   const [loadingCaso, setLoadingCaso] = useState(true)
   const [refreshKey, setRefreshKey] = useState(0)
   const [mostrarForm, setMostrarForm] = useState(false)
-
-  // 👉 ESTADO SOLO PARA PDF
-  const [mostrarPDF, setMostrarPDF] = useState(false)
+  const { push } = useToast()
 
   const { data: seguimientos, loading: loadingSeg } = useSeguimientos(
     casoId,
@@ -40,55 +39,47 @@ export default function SeguimientoPage({
     async function cargarCaso() {
       try {
         setLoadingCaso(true)
-        const record = await getRecord('CASOS_ACTIVOS', casoId)
+        const record = await getCase(casoId)
         setCaso(record)
       } catch (e) {
         console.error(e)
+        push({ type: 'error', title: 'Error cargando caso', message: e?.message || 'Fallo de red' })
       } finally {
         setLoadingCaso(false)
       }
     }
 
     cargarCaso()
-  }, [casoId])
+  }, [casoId, push])
 
   async function cerrarCaso() {
     if (!confirm('¿Confirmar cierre del caso?')) return
 
     try {
-      await updateRecord('CASOS_ACTIVOS', casoId, {
+      await updateCase(casoId, {
         Estado: 'Cerrado',
       })
 
-      await createRecord('SEGUIMIENTOS', {
-        Fecha: new Date().toISOString().slice(0, 10),
-        Tipo_Accion: 'Resolución',
-        Etapa_Debido_Proceso: '6. Resolución y Sanciones',
-        Estado_Etapa: 'Completada',
-        Responsable: 'Encargado Convivencia',
-        Detalle: 'Cierre formal del caso',
-        CASOS_ACTIVOS: [casoId],
+      await createFollowup({
+        Caso_ID: casoId,
+        Fecha_Seguimiento: new Date().toISOString().slice(0, 10),
+        Descripcion: 'Cierre formal del caso',
+        Acciones: 'Caso cerrado',
       })
 
+      push({ type: 'success', title: 'Caso cerrado', message: 'El caso se marcó como cerrado' })
       alert('Caso cerrado correctamente')
+      emitDataUpdated()
+      onDataChange?.()
+      onCaseClosed?.(casoId)
+      navigate(`/casos-cerrados?caso=${casoId}`)
       setRefreshKey(k => k + 1)
       setMostrarForm(false)
     } catch (e) {
       console.error(e)
+      push({ type: 'error', title: 'No se pudo cerrar', message: e?.message || 'Intenta de nuevo' })
       alert('Error al cerrar el caso')
     }
-  }
-
-  /* =========================
-     👉 PDF: RENDER EXCLUSIVO
-  ========================== */
-  if (mostrarPDF && caso) {
-    return (
-      <InformeCasoPDF
-        caso={caso}
-        seguimientos={seguimientos || []}
-      />
-    )
   }
 
   if (!casoId) {
@@ -155,6 +146,11 @@ export default function SeguimientoPage({
             <button
               onClick={async () => {
                 try {
+                  const [{ pdf }, { default: InformeCasoDocument }] = await Promise.all([
+                    import('@react-pdf/renderer'),
+                    import('../components/InformeCasoDocument'),
+                  ])
+
                   const doc = (
                     <InformeCasoDocument
                       caso={caso}
@@ -171,8 +167,10 @@ export default function SeguimientoPage({
                   a.click()
                   a.remove()
                   URL.revokeObjectURL(url)
+                  push({ type: 'success', title: 'PDF listo', message: 'Informe generado' })
                 } catch (e) {
                   console.error(e)
+                  push({ type: 'error', title: 'Error al generar PDF', message: e?.message || 'Intenta de nuevo' })
                   alert('Error al generar PDF')
                 }
               }}
@@ -205,10 +203,10 @@ export default function SeguimientoPage({
         <p><strong>Curso:</strong> {caso.fields.Curso_Incidente || 'N/A'}</p>
         <p><strong>Fecha / Hora:</strong>{' '} {caso.fields.Fecha_Incidente ? formatDate(caso.fields.Fecha_Incidente) : 'N/A'} ·{' '} {caso.fields.Hora_Incidente || 'N/A'}</p>
         <p><strong>Tipificación:</strong> {caso.fields.Tipificacion_Conducta || 'N/A'}</p>
-        <p><strong>Categoría:</strong> {caso.fields.Categoria_Conducta || 'N/A'}</p>
+        <p><strong>Categoría:</strong> {caso.fields.Categoria || 'N/A'}</p>
         <p className="col-span-2"><strong>Descripción:</strong></p>
         <div className="col-span-2 break-words whitespace-pre-wrap text-sm">
-          {caso.fields.Descripcion_Breve || 'Sin descripción'}
+          {caso.fields.Descripcion || 'Sin descripción'}
         </div>
       </div>
 
@@ -244,7 +242,7 @@ export default function SeguimientoPage({
 
         <div className="space-y-4">
           {(seguimientos || []).map(seg => (
-            <SeguimientoItem key={seg.id} seg={seg} />
+            <SeguimientoItem key={seg.id} seg={seg} readOnly={soloLectura} />
           ))}
         </div>
       </div>
@@ -280,6 +278,8 @@ export default function SeguimientoPage({
               onSaved={() => {
                 setRefreshKey(k => k + 1)
                 setMostrarForm(false)
+                emitDataUpdated()
+                onDataChange?.()
               }}
             />
           </div>

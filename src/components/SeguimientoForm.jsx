@@ -1,18 +1,26 @@
-import { useState } from 'react'
-import { createRecord } from '../api/airtable'
+import { useRef, useState } from 'react'
+import { createFollowup } from '../api/db'
+import { uploadEvidenceFiles } from '../api/evidence'
+import { useToast } from '../hooks/useToast'
 
 export default function SeguimientoForm({ casoId, onSaved }) {
   const [tipoAccion, setTipoAccion] = useState('')
   const [etapa, setEtapa] = useState('')
-  const [estado, setEstado] = useState('Pendiente')
+  const [estado, setEstado] = useState('Completada')
   const [responsable, setResponsable] = useState('')
   const [detalle, setDetalle] = useState('')
   const [observaciones, setObservaciones] = useState('')
+  const [files, setFiles] = useState([])
   const [loading, setLoading] = useState(false)
+  const fileInputRef = useRef(null)
+  const { push } = useToast()
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!tipoAccion || !etapa) return
+    if (!tipoAccion || !etapa) {
+      push({ type: 'error', title: 'Datos incompletos', message: 'Selecciona tipo de acción y etapa' })
+      return
+    }
 
     try {
       setLoading(true)
@@ -21,36 +29,44 @@ export default function SeguimientoForm({ casoId, onSaved }) {
       const hoy = new Date()
       const fechaISO = hoy.toISOString().slice(0, 10)
 
-      // ⏱️ Fecha plazo: +10 días hábiles (simplificado a 14 corridos)
-      const plazo = new Date(hoy)
-      plazo.setDate(plazo.getDate() + 14)
-      const fechaPlazoISO = plazo.toISOString().slice(0, 10)
-
-      // Nota: `Fecha_Plazo` es un campo calculado en Airtable (no aceptar valores),
-      // por eso lo omitimos de la carga. Airtable calculará el valor automáticamente.
-      await createRecord('SEGUIMIENTOS', {
-        Fecha: fechaISO,
+      // Crear seguimiento en Supabase
+      const followup = await createFollowup({
+        Caso_ID: casoId,
+        Fecha_Seguimiento: fechaISO,
         Tipo_Accion: tipoAccion,
         Etapa_Debido_Proceso: etapa,
+        Descripcion: detalle || tipoAccion,
+        Acciones: responsable || 'Por asignar',
+        Responsable: responsable || 'Por asignar',
         Estado_Etapa: estado,
-        Responsable: responsable,
         Detalle: detalle,
         Observaciones: observaciones,
-        CASOS_ACTIVOS: [casoId],
       })
 
+      if (files.length) {
+        await uploadEvidenceFiles({ caseId: casoId, followupId: followup.id, files })
+      }
+
+      push({
+        type: 'success',
+        title: 'Seguimiento guardado',
+        message: files.length ? 'Acción y evidencias registradas' : 'Acción registrada',
+      })
       onSaved?.()
 
       // 🔄 Reset form
       setTipoAccion('')
       setEtapa('')
-      setEstado('Pendiente')
+      setEstado('Completada')
       setResponsable('')
       setDetalle('')
       setObservaciones('')
+      setFiles([])
+      if (fileInputRef.current) fileInputRef.current.value = ''
     } catch (e) {
       console.error(e)
-      alert('Error al guardar seguimiento')
+      push({ type: 'error', title: 'Error al guardar', message: e?.message || 'Intenta nuevamente' })
+      alert('Error al guardar seguimiento: ' + e.message)
     } finally {
       setLoading(false)
     }
@@ -79,7 +95,7 @@ export default function SeguimientoForm({ casoId, onSaved }) {
         className="w-full border rounded p-2"
         required
       >
-        <option value="">Etapa del proceso</option>
+        <option value="">Etapa del debido proceso</option>
         <option>1. Comunicación/Denuncia</option>
         <option>2. Notificación Apoderados</option>
         <option>3. Recopilación Antecedentes</option>
@@ -95,7 +111,6 @@ export default function SeguimientoForm({ casoId, onSaved }) {
         onChange={e => setEstado(e.target.value)}
         className="w-full border rounded p-2"
       >
-        <option>Pendiente</option>
         <option>En Proceso</option>
         <option>Completada</option>
       </select>
@@ -122,7 +137,23 @@ export default function SeguimientoForm({ casoId, onSaved }) {
         className="w-full border rounded p-2 min-h-[80px]"
       />
 
-      
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">Evidencias (opcional)</label>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          onChange={e => setFiles(Array.from(e.target.files || []))}
+          className="w-full"
+        />
+        {files.length > 0 && (
+          <ul className="text-sm text-gray-600 list-disc list-inside">
+            {files.map(file => (
+              <li key={file.name}>{file.name}</li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       <button
         type="submit"

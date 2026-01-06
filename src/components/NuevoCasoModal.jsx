@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { createRecord, getRecords } from '../api/airtable'
+import { createCase } from '../api/db'
+import { supabase } from '../api/supabaseClient'
+import { useToast } from '../hooks/useToast'
 
 /* ================= TIPIFICACIONES ================= */
 
@@ -65,44 +67,67 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
   const [fecha, setFecha] = useState('')
   const [hora, setHora] = useState('')
   const [curso, setCurso] = useState('')
-  const [estudiante, setEstudiante] = useState(null)
-
+  const [cursos, setCursos] = useState([])
   const [estudiantes, setEstudiantes] = useState([])
-  const [estudiantesFiltrados, setEstudiantesFiltrados] = useState([])
-
+  const [estudianteId, setEstudianteId] = useState('')
   const [tipo, setTipo] = useState('')
   const [conductas, setConductas] = useState([])
   const [descripcionLibre, setDescripcionLibre] = useState('')
-  const [estado, setEstado] = useState('Reportado')
+  const [estado, setEstado] = useState('Activo')
+  const [guardando, setGuardando] = useState(false)
+  const { push } = useToast()
 
-  /* ================= CARGA ESTUDIANTES ================= */
+  /* ================= CARGA CURSOS ================= */
 
   useEffect(() => {
-    async function cargar() {
-      try {
-        const data = await getRecords('ESTUDIANTES')
-        setEstudiantes(data)
-      } catch (e) {
-        console.error('Error cargando estudiantes', e)
-      }
-    }
-    cargar()
+    cargarCursos()
   }, [])
 
-  /* ================= FILTRAR SOLO CUANDO CAMBIA CURSO ================= */
+  async function cargarCursos() {
+    try {
+      const { data, error } = await supabase
+        .from('students')
+        .select('course')
+        .not('course', 'is', null)
+        .order('course')
+
+      if (error) throw error
+
+      // Obtener cursos únicos
+      const cursosUnicos = [...new Set(data.map(s => s.course))].filter(Boolean)
+      setCursos(cursosUnicos)
+    } catch (error) {
+      console.error('Error cargando cursos:', error)
+    }
+  }
+
+  /* ================= CARGA ESTUDIANTES POR CURSO ================= */
 
   useEffect(() => {
     if (!curso) {
-      setEstudiantesFiltrados([])
+      setEstudiantes([])
+      setEstudianteId('')
       return
     }
 
-    const filtrados = estudiantes.filter(
-      e => e.fields.Curso === curso
-    )
+    async function cargarEstudiantes() {
+      try {
+        const { data, error } = await supabase
+          .from('students')
+          .select('id, first_name, last_name, course')
+          .eq('course', curso)
+          .order('last_name')
 
-    setEstudiantesFiltrados(filtrados)
-  }, [curso, estudiantes])
+        if (error) throw error
+
+        setEstudiantes(data || [])
+      } catch (error) {
+        console.error('Error cargando estudiantes:', error)
+      }
+    }
+
+    cargarEstudiantes()
+  }, [curso])
 
   function toggleConducta(texto) {
     setConductas(prev =>
@@ -113,36 +138,54 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
   }
 
   async function guardarCaso() {
-    if (!fecha || !hora || !curso || !estudiante || !tipo) {
-      alert('Completa todos los campos obligatorios')
+    if (!fecha || !hora || !estudianteId || !tipo) {
+      push({ type: 'error', title: 'Datos incompletos', message: 'Completa fecha, hora, estudiante y tipo' })
       return
     }
 
     try {
-      await createRecord('CASOS_ACTIVOS', {
+      setGuardando(true)
+      
+      // Convertir conductas seleccionadas a string separado por comas
+      const categoriasConducta = conductas.length > 0 ? conductas.join(', ') : ''
+      
+      const casoData = {
         Fecha_Incidente: fecha,
         Hora_Incidente: hora,
+        Estudiante_ID: estudianteId,
         Curso_Incidente: curso,
-        Nivel_Incidente: estudiante.fields.Nivel,
-        Estudiante_Responsable: `${estudiante.fields.Nombres} ${estudiante.fields.Apellidos}`,
-        Estudiante_Link: [estudiante.id],
         Tipificacion_Conducta: tipo,
-        Categoria_Conducta: conductas.join(', '),
-        Descripcion_Breve: descripcionLibre,
+        Categoria: categoriasConducta,
+        Descripcion: descripcionLibre,
         Estado: estado
-      })
+      }
+      
+      console.log('📝 Guardando caso con datos:', casoData)
+      
+      await createCase(casoData)
 
+      push({ type: 'success', title: 'Caso creado', message: 'El caso se guardó exitosamente' })
+      alert('Caso creado correctamente')
       onSaved?.()
       onClose?.()
     } catch (e) {
       console.error(e)
-      alert('Error al guardar el caso')
+      push({ type: 'error', title: 'Error al guardar', message: e?.message || 'Intenta nuevamente' })
+      alert('Error al guardar el caso: ' + e.message)
+    } finally {
+      setGuardando(false)
     }
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white w-full max-w-6xl rounded-xl shadow-xl p-6 relative space-y-4">
+
+        {guardando && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center rounded-xl z-10">
+            <div className="text-gray-700 font-medium">Guardando…</div>
+          </div>
+        )}
 
         {/* CERRAR */}
         <button
@@ -161,40 +204,33 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
           <input type="time" value={hora} onChange={e => setHora(e.target.value)} className="border rounded p-2" />
         </div>
 
-        {/* CURSO + ESTUDIANTE */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <select
-            value={curso}
-            onChange={e => {
-              setCurso(e.target.value)
-              setEstudiante(null)
-            }}
-            className="w-full border rounded p-2"
-          >
-            <option value="">Seleccionar curso</option>
-            {[...new Set(estudiantes.map(e => e.fields.Curso))].map(c => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>
+        {/* CURSO */}
+        <select
+          value={curso}
+          onChange={e => setCurso(e.target.value)}
+          className="w-full border rounded p-2"
+        >
+          <option value="">Selecciona un curso</option>
+          {cursos.map(c => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
 
+        {/* ESTUDIANTE */}
+        {curso && (
           <select
-            value={estudiante?.id || ''}
-            onChange={e =>
-              setEstudiante(
-                estudiantesFiltrados.find(es => es.id === e.target.value)
-              )
-            }
+            value={estudianteId}
+            onChange={e => setEstudianteId(e.target.value)}
             className="w-full border rounded p-2"
-            disabled={!curso}
           >
-            <option value="">Seleccionar estudiante</option>
-            {estudiantesFiltrados.map(e => (
-              <option key={e.id} value={e.id}>
-                {e.fields.Nombres} {e.fields.Apellidos}
+            <option value="">Selecciona un estudiante</option>
+            {estudiantes.map(est => (
+              <option key={est.id} value={est.id}>
+                {est.first_name} {est.last_name}
               </option>
             ))}
           </select>
-        </div>
+        )}
 
         {/* TIPIFICACIÓN */}
         <div>
@@ -273,9 +309,10 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
           <button
             type="button"
             onClick={guardarCaso}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            disabled={guardando}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
           >
-            Guardar
+            {guardando ? 'Guardando…' : 'Guardar'}
           </button>
         </div>
 

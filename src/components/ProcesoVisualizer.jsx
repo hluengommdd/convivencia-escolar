@@ -18,20 +18,45 @@ export default function ProcesoVisualizer({ seguimientos = [], compact = false, 
   let etapaActual = null
 
   seguimientos.forEach(seg => {
-    const etapa = seg.fields?.Etapa_Debido_Proceso
+    const tipoAccion = seg.fields?.Tipo_Accion
     const estado = seg.fields?.Estado_Etapa
 
-    if (etapa) {
-      // Extraer el número de la etapa (ej: "1. Comunicación" -> 1)
-      const match = etapa.match(/^(\d+)\./)
-      if (match) {
-        const numEtapa = parseInt(match[1])
-        etapasConSeguimiento.set(numEtapa, seg)
-        
-        if (estado === 'Completada') {
+    if (tipoAccion && estado === 'Completada') {
+      // Primero intentar usar Etapa_Debido_Proceso si existe
+      const etapaDirecta = seg.fields?.Etapa_Debido_Proceso
+      if (etapaDirecta) {
+        // Buscar número al inicio: "1. Comunicación", "Etapa 1", etc.
+        const match = etapaDirecta.match(/^(\d+)\.?/) || etapaDirecta.match(/Etapa (\d+)/)
+        if (match) {
+          const numEtapa = parseInt(match[1], 10)
+          etapasConSeguimiento.set(numEtapa, seg)
           etapasCompletadas.add(numEtapa)
-        } else if (estado === 'En Proceso' || estado === 'Pendiente') {
-          etapaActual = numEtapa
+        }
+      } else {
+        // Fallback: mapear tipo de acción a número de etapa
+        const mapaTipoAEtapa = {
+          'Denuncia': 1,
+          'Comunicación': 1,
+          'Comunicación/Denuncia': 1,
+          'Notificación': 2,
+          'Notificación Apoderados': 2,
+          'Antecedentes': 3,
+          'Recopilación Antecedentes': 3,
+          'Entrevistas': 4,
+          'Investigación': 5,
+          'Investigación/Análisis': 5,
+          'Resolución': 6,
+          'Resolución y Sanciones': 6,
+          'Apelación': 7,
+          'Apelación/Recursos': 7,
+          'Seguimiento': 8
+        }
+        
+        const numEtapa = Object.keys(mapaTipoAEtapa).find(key => tipoAccion.includes(key))
+        if (numEtapa) {
+          const etapaNum = mapaTipoAEtapa[numEtapa]
+          etapasConSeguimiento.set(etapaNum, seg)
+          etapasCompletadas.add(etapaNum)
         }
       }
     }
@@ -44,8 +69,8 @@ export default function ProcesoVisualizer({ seguimientos = [], compact = false, 
   ETAPAS_PROCESO.forEach(etapa => {
     if (!etapasCompletadas.has(etapa.numero) && etapa.plazoMaxDias) {
       const seg = etapasConSeguimiento.get(etapa.numero)
-      if (seg && seg.fields?.Fecha) {
-        const fechaSeg = new Date(seg.fields.Fecha)
+      if (seg && seg.fields?.Fecha_Seguimiento) {
+        const fechaSeg = new Date(seg.fields.Fecha_Seguimiento)
         const diasTranscurridos = Math.floor((hoy - fechaSeg) / (1000 * 60 * 60 * 24))
         
         if (diasTranscurridos > etapa.plazoMaxDias) {
@@ -92,7 +117,6 @@ export default function ProcesoVisualizer({ seguimientos = [], compact = false, 
         {ETAPAS_PROCESO.map((etapa, index) => {
           const isCompletada = etapasCompletadas.has(etapa.numero)
           const isActual = etapa.numero === etapaActual
-          const isPendiente = !isCompletada && !isActual
 
           return (
             <div key={etapa.numero} className="flex items-center">

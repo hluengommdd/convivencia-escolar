@@ -16,7 +16,7 @@ Aplicación web para **registrar, seguir y analizar** casos de convivencia escol
 - **React** (SPA, rutas con `react-router-dom`).[1]
 - **Recharts** para gráficos de barras, líneas y tortas.[5][2]
 - **lucide-react** para iconografía.[2]
-- **Airtable** como backend de datos (tablas `CASOS_ACTIVOS` y `SEGUIMIENTOS`, vista “Grid view” y “Control de Plazos”).[5][2]
+- **Supabase** como backend de datos para casos, seguimientos y vistas de control de plazos.
 
 ## Estructura funcional
 
@@ -30,7 +30,13 @@ Aplicación web para **registrar, seguir y analizar** casos de convivencia escol
 ## Configuración y despliegue
 
 1. Clonar el repositorio.  
-2. Crear archivo de entorno (`.env.local`) con las credenciales de Airtable: base ID, API key y nombres de tablas/vistas.[5][2]
+2. Crear archivo de entorno (`.env.local`) con las credenciales de Supabase:
+
+```bash
+VITE_SUPABASE_URL=tu-url.supabase.co
+VITE_SUPABASE_ANON_KEY=tu-anon-key
+```
+
 3. Instalar dependencias y levantar en desarrollo:
 
 ```bash
@@ -43,45 +49,6 @@ npm run dev
 ```bash
 npm run build
 ```
-
-## Evidencias en Google Drive (subida de archivos)
-
-Para adjuntar imágenes o documentos como respaldo en una acción de seguimiento, la app puede subir archivos a **Google Drive** y guardar los enlaces en el campo de observaciones.
-
-### Requisitos
-
-- Crear un proyecto en **Google Cloud** y habilitar la API de **Google Drive**.
-- Crear un **OAuth Client ID** (tipo: Web application) y agregar los orígenes autorizados (por ejemplo, `http://localhost:5173` o el puerto actual que use Vite).
-- Agregar al archivo `.env.local`:
-
-```bash
-VITE_GOOGLE_CLIENT_ID=tu_client_id.apps.googleusercontent.com
-VITE_GOOGLE_DRIVE_FOLDER_ID=opcional_id_de_carpeta
-```
-
-### Cómo funciona en la app
-
-- En `src/components/SeguimientoForm.jsx` se agrega un input de archivos. Al guardar la acción:
-	- Se solicita un token mediante **Google Identity Services**.
-	- Se sube cada archivo a Drive (opcionalmente dentro de `VITE_GOOGLE_DRIVE_FOLDER_ID`).
-	- Se establece permiso de lectura “cualquiera con el enlace” para facilitar la visualización.
-	- Los enlaces (`webViewLink`) se añaden automáticamente en el texto de Observaciones bajo el título “Evidencias:”.
-
-### Archivo de ayuda
-
-- Lógica de subida y permisos: [src/api/googleDrive.js](src/api/googleDrive.js)
-
-### Carpeta por caso (organización)
-
-- La app puede crear automáticamente una **carpeta por caso** dentro de la carpeta base definida en `VITE_GOOGLE_DRIVE_FOLDER_ID`.
-- El nombre por defecto es `CASO_<recordId>`; puedes ajustar el rótulo pasando `caseLabel`.
-- El `folderId` usado se puede guardar en el caso (campo `Drive_Folder_ID`) para reutilizarlo en futuras subidas.
-
-### Privacidad y permisos
-
-- Por defecto los archivos quedan accesibles “con enlace”. Si prefieres restringir, elimina o ajusta la creación de permisos en `googleDrive.js`.
-- Puedes definir una **carpeta específica** con `VITE_GOOGLE_DRIVE_FOLDER_ID` para separar la documentación de convivencia escolar.
-
 
 ## Uso sugerido en la escuela
 

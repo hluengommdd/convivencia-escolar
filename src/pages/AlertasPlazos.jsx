@@ -1,18 +1,36 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAirtable } from '../hooks/useAirtable'
+import { useEffect, useState } from 'react'
+import { getControlPlazos, getCases } from '../api/db'
 import { AlertTriangle, Clock, CheckCircle, FileText } from 'lucide-react'
 
 export default function AlertasPlazos() {
   const navigate = useNavigate()
 
-  const { data: seguimientos, loading, error } = useAirtable(
-    'SEGUIMIENTOS',
-    'Control de Plazos'
-  )
+  const [seguimientos, setSeguimientos] = useState([])
+  const [casos, setCasos] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  // Cargar casos para obtener información de estudiantes
-  const { data: casos } = useAirtable('CASOS_ACTIVOS', 'Grid view')
+  useEffect(() => {
+    async function cargar() {
+      try {
+        setLoading(true)
+        const [controlData, casesData] = await Promise.all([
+          getControlPlazos(),
+          getCases()
+        ])
+        setSeguimientos(controlData)
+        setCasos(casesData)
+      } catch (e) {
+        console.error(e)
+        setError(e?.message || 'Error al cargar alertas')
+      } finally {
+        setLoading(false)
+      }
+    }
+    cargar()
+  }, [])
 
   /* =========================
      CLASIFICACIÓN
@@ -185,7 +203,6 @@ function Seccion({
   casos,
   navigate,
   tone,
-  large = false,
   compact = false,
 }) {
   if (!items || items.length === 0) return null

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
-import { getRecords } from '../api/airtable'
+import { getCases } from '../api/db'
 import CaseDetailPanel from '../components/CaseDetailPanel'
 import NuevoCasoModal from '../components/NuevoCasoModal'
 import { formatDate } from '../utils/formatDate'
@@ -21,7 +21,7 @@ export default function CasosActivos() {
     async function cargar() {
       try {
         setLoading(true)
-        const data = await getRecords('CASOS_ACTIVOS')
+        const data = await getCases()
 
         // 🔹 SOLO CASOS NO CERRADOS
         const activos = data.filter(

@@ -1,4 +1,5 @@
 import React from 'react'
+import { emitToast } from './toastBus'
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -6,13 +7,18 @@ class ErrorBoundary extends React.Component {
     this.state = { hasError: false, error: null, errorInfo: null }
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError() {
     return { hasError: true }
   }
 
   componentDidCatch(error, errorInfo) {
     console.error('Error capturado:', error, errorInfo)
     this.setState({ error, errorInfo })
+    emitToast({
+      type: 'error',
+      title: 'Error en la aplicación',
+      message: error?.message || 'Ha ocurrido un error inesperado',
+    })
   }
 
   render() {

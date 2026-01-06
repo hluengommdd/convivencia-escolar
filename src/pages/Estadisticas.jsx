@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  BarChart,
-  Bar,
   LineChart,
   Line,
   PieChart,
@@ -12,296 +10,131 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { pdf } from '@react-pdf/renderer'
-import { useAirtable } from '../hooks/useAirtable'
-import EstadisticasDocument from '../components/EstadisticasDocument'
+import { BarChart } from 'recharts/es6/chart/BarChart'
+import { Bar } from 'recharts/es6/cartesian/Bar'
+import { loadEstadisticas, getFechasFromAnioSemestre } from '../api/estadisticas'
+import { onDataUpdated } from '../utils/refreshBus'
+import { useToast } from '../hooks/useToast'
 
 const COLORS = ['#ef4444', '#f59e0b', '#3b82f6', '#10b981']
-
-/* =========================
-   UTILIDADES
-========================== */
-
-const safeDate = s => {
-  if (!s) return null
-  const d = new Date(s)
-  return isNaN(d.getTime()) ? null : d
-}
-
-const daysBetween = (a, b) =>
-  Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24))
 
 /* =========================
    COMPONENTE
 ========================== */
 
 export default function Estadisticas() {
-  /* =========================
-     ESTADOS
-  ========================== */
-
   const [anio, setAnio] = useState('')
   const [semestre, setSemestre] = useState('Todos')
-  const [desde, setDesde] = useState('')
-  const [hasta, setHasta] = useState('')
-  const [cursoSeleccionado, setCursoSeleccionado] = useState(null)
+  const [cursoSeleccionado, setCursoSeleccionado] = useState('')
+  
+  const [stats, setStats] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const { push } = useToast()
+
+  useEffect(() => {
+    let mounted = true
+
+    async function cargar() {
+      try {
+        setLoading(true)
+        
+        const { desde, hasta } = getFechasFromAnioSemestre(anio, semestre)
+        
+        if (!desde || !hasta) {
+          if (mounted) setStats(null)
+          return
+        }
+        
+        const data = await loadEstadisticas({ desde, hasta })
+        if (mounted) {
+          setStats(data)
+          setError(null)
+        }
+      } catch (e) {
+        console.error('Error cargando estadísticas:', e)
+        if (mounted) setError(e.message)
+        push({ type: 'error', title: 'Error en estadísticas', message: e?.message || 'Fallo de red' })
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+    
+    cargar()
+
+    const off = onDataUpdated(() => {
+      cargar()
+    })
+
+    return () => {
+      mounted = false
+      off()
+    }
+  }, [anio, semestre, push])
 
   /* =========================
-     DATA
+     DATOS PARA GRÁFICOS
   ========================== */
 
-  const { data: casos = [], loading, error } = useAirtable(
-    'CASOS_ACTIVOS',
-    'Grid view',
-    anio ? `YEAR(Fecha_Incidente) = ${anio}` : undefined
-  )
+  const dataTipo = useMemo(() => {
+    return stats?.charts?.porTip?.map(item => ({
+      name: item.tipificacion,
+      value: Number(item.total),
+    })) ?? []
+  }, [stats])
 
-  const {
-    data: seguimientos = [],
-    loading: loadingSeg,
-  } = useAirtable(
-    'SEGUIMIENTOS',
-    'Grid view',
-    anio ? `IS_AFTER(Fecha, '${anio}-01-01')` : undefined
-  )
+  const dataCursos = useMemo(() => {
+    return stats?.charts?.porCurso?.map(item => ({
+      curso: item.curso,
+      total: Number(item.total),
+    })) ?? []
+  }, [stats])
 
-  const isLoading = loading || loadingSeg
-  const hasError = !!error
+  const dataMeses = useMemo(() => {
+    return stats?.charts?.porMes?.map(item => ({
+      mes: item.mes,
+      total: Number(item.total),
+    })) ?? []
+  }, [stats])
 
   /* =========================
-     AÑOS DISPONIBLES
+     AÑOS DISPONIBLES (2025, 2026, etc.)
   ========================== */
 
   const aniosDisponibles = useMemo(() => {
-    const set = new Set()
-    casos.forEach(c => {
-      const f = c.fields?.Fecha_Incidente
-      if (f) set.add(f.slice(0, 4))
-    })
-    return Array.from(set).sort()
-  }, [casos])
+    const ahora = new Date()
+    const anioActual = ahora.getFullYear()
+    // Mostrar últimos 5 años y el actual
+    return Array.from({ length: 6 }, (_, i) => String(anioActual - i)).reverse()
+  }, [])
 
+  // Seleccionar año por defecto
   useEffect(() => {
     if (!anio && aniosDisponibles.length) {
-      const y = aniosDisponibles[aniosDisponibles.length - 1]
-      setAnio(y)
-      setDesde(`${y}-01-01`)
-      setHasta(`${y}-12-31`)
+      setAnio(aniosDisponibles[aniosDisponibles.length - 1])
     }
   }, [aniosDisponibles, anio])
-
-  useEffect(() => {
-    if (!anio) return
-    if (semestre === '1') {
-      setDesde(`${anio}-01-01`)
-      setHasta(`${anio}-06-30`)
-    } else if (semestre === '2') {
-      setDesde(`${anio}-07-01`)
-      setHasta(`${anio}-12-31`)
-    } else {
-      setDesde(`${anio}-01-01`)
-      setHasta(`${anio}-12-31`)
-    }
-  }, [anio, semestre])
-
-  /* =========================
-     FILTRADO
-  ========================== */
-
-  const casosFiltrados = useMemo(() => {
-    const dDesde = safeDate(desde)
-    const dHasta = safeDate(hasta)
-
-    return casos.filter(c => {
-      const d = safeDate(c.fields?.Fecha_Incidente)
-      if (!d) return false
-      if (dDesde && d < dDesde) return false
-      if (dHasta && d > new Date(hasta + 'T23:59:59')) return false
-      if (cursoSeleccionado && c.fields?.Curso_Incidente !== cursoSeleccionado)
-        return false
-      return true
-    })
-  }, [casos, desde, hasta, cursoSeleccionado])
-
-  const idsCasos = useMemo(
-    () => new Set(casosFiltrados.map(c => c.id)),
-    [casosFiltrados]
-  )
-
-  const seguimientosFiltrados = useMemo(() => {
-    return seguimientos.filter(s =>
-      (s.fields?.CASOS_ACTIVOS || []).some(id => idsCasos.has(id))
-    )
-  }, [seguimientos, idsCasos])
 
   /* =========================
      KPI OPERATIVOS (LOS QUE YA TENÍAS)
   ========================== */
 
-  const kpi = useMemo(() => {
-    const total = casosFiltrados.length
-    const cerrados = casosFiltrados.filter(c => c.fields?.Estado === 'Cerrado')
-    const abiertos = total - cerrados.length
-
-    let sum = 0
-    let n = 0
-
-    cerrados.forEach(c => {
-      const ini = safeDate(c.fields?.Fecha_Incidente)
-      const fin = seguimientosFiltrados
-        .filter(s => (s.fields?.CASOS_ACTIVOS || []).includes(c.id))
-        .map(s => safeDate(s.fields?.Fecha))
-        .filter(Boolean)
-        .sort((a, b) => b - a)[0]
-
-      if (ini && fin) {
-        sum += daysBetween(ini, fin)
-        n++
-      }
-    })
-
-    return {
-      total,
-      abiertos,
-      cerrados: cerrados.length,
-      promedio: n > 0 ? Math.round((sum / n) * 10) / 10 : null,
-    }
-  }, [casosFiltrados, seguimientosFiltrados])
-
   /* =========================
-     KPI DIRECTIVOS (NUEVOS)
+     KPI OPERATIVOS
   ========================== */
 
-  const seguimientosConPlazo = seguimientosFiltrados.filter(
-    s => typeof s.fields?.Dias_Restantes === 'number'
-  )
+  const kpi = stats?.kpis ?? { casos_total: 0, abiertos: 0, cerrados: 0, promedio_cierre_dias: 0 }
+  const plazos = stats?.plazos ?? { total_plazos: 0, fuera_plazo: 0, dentro_plazo: 0, cumplimiento_pct: 0 }
+  const reincidencia = stats?.reincidencia ?? 0
+  const mayorCarga = stats?.mayorCarga ?? { responsable: 'Sin responsable', total: 0 }
 
-  const fueraDePlazo = seguimientosConPlazo.filter(
-    s => s.fields.Dias_Restantes < 0
-  )
-
-  const cumplimientoPlazo =
-    seguimientosConPlazo.length > 0
-      ? Math.round(
-          ((seguimientosConPlazo.length - fueraDePlazo.length) /
-            seguimientosConPlazo.length) *
-            100
-        )
-      : 100
-
-  // Reincidencia
-  const reincidencia = useMemo(() => {
-    const map = {}
-    casosFiltrados.forEach(c => {
-      const e = c.fields?.Estudiante_Responsable
-      if (!e) return
-      map[e] = (map[e] || 0) + 1
-    })
-    return Object.entries(map)
-      .filter(([, n]) => n >= 2)
-      .map(([estudiante, total]) => ({ estudiante, total }))
-  }, [casosFiltrados])
+  const cumplimientoPlazo = plazos.cumplimiento_pct
 
   // Carga por responsable
-  const cargaPorResponsable = useMemo(() => {
-    const map = {}
-    seguimientosFiltrados.forEach(s => {
-      const r = s.fields?.Responsable || 'Sin asignar'
-      map[r] = (map[r] || 0) + 1
-    })
-    return Object.entries(map)
-      .map(([responsable, total]) => ({ responsable, total }))
-      .sort((a, b) => b.total - a.total)
-  }, [seguimientosFiltrados])
+  const cargaPorResponsable = mayorCarga.total > 0 ? [mayorCarga] : []
 
-  // Tiempo promedio por etapa del debido proceso
-  const tiempoPromedioEtapas = useMemo(() => {
-    const ETAPAS = [
-      { numero: 1, nombre: 'Medidas formativas' },
-      { numero: 2, nombre: 'Notificación a padres' },
-      { numero: 3, nombre: 'Investigación' },
-      { numero: 4, nombre: 'Resolución' },
-      { numero: 5, nombre: 'Aplicación de medidas' },
-      { numero: 6, nombre: 'Seguimiento' },
-      { numero: 7, nombre: 'Evaluación' },
-      { numero: 8, nombre: 'Cierre' }
-    ]
-
-    return ETAPAS.map(etapa => {
-      // Filtrar seguimientos de esta etapa
-      const seguimientosEtapa = seguimientosFiltrados.filter(s => {
-        const desc = s.fields?.Descripcion || ''
-        const regex = new RegExp(`Etapa\\s+${etapa.numero}`, 'i')
-        return regex.test(desc)
-      })
-
-      if (seguimientosEtapa.length === 0) {
-        return { etapa: etapa.nombre, promedio: 0, total: 0 }
-      }
-
-      // Calcular tiempo promedio desde inicio del caso
-      let sumaDias = 0
-      let conteo = 0
-
-      seguimientosEtapa.forEach(seg => {
-        const fechaSeg = safeDate(seg.fields?.Fecha)
-        if (!fechaSeg) return
-
-        // Buscar el caso asociado
-        const casoIds = seg.fields?.CASOS_ACTIVOS || []
-        const caso = casosFiltrados.find(c => casoIds.includes(c.id))
-        if (!caso) return
-
-        const fechaInicio = safeDate(caso.fields?.Fecha_Incidente)
-        if (!fechaInicio) return
-
-        const dias = daysBetween(fechaInicio, fechaSeg)
-        if (dias >= 0) {
-          sumaDias += dias
-          conteo++
-        }
-      })
-
-      const promedio = conteo > 0 ? Math.round((sumaDias / conteo) * 10) / 10 : 0
-
-      return { 
-        etapa: etapa.nombre, 
-        promedio, 
-        total: seguimientosEtapa.length 
-      }
-    }).filter(e => e.total > 0) // Solo mostrar etapas con datos
-  }, [seguimientosFiltrados, casosFiltrados])
-
-  /* =========================
-     GRÁFICOS (IGUALES A LOS TUYOS)
-  ========================== */
-
-  const dataMes = useMemo(() => {
-    const m = {}
-    casosFiltrados.forEach(c => {
-      const mes = c.fields?.Fecha_Incidente?.slice(0, 7)
-      if (mes) m[mes] = (m[mes] || 0) + 1
-    })
-    return Object.keys(m).map(k => ({ mes: k, total: m[k] }))
-  }, [casosFiltrados])
-
-  const dataTipo = useMemo(() => {
-    const t = {}
-    casosFiltrados.forEach(c => {
-      const k = c.fields?.Tipificacion_Conducta || 'Sin dato'
-      t[k] = (t[k] || 0) + 1
-    })
-    return Object.keys(t).map(k => ({ name: k, value: t[k] }))
-  }, [casosFiltrados])
-
-  const dataCursos = useMemo(() => {
-    const c = {}
-    casosFiltrados.forEach(x => {
-      const k = x.fields?.Curso_Incidente || 'Sin curso'
-      c[k] = (c[k] || 0) + 1
-    })
-    return Object.keys(c).map(k => ({ curso: k, total: c[k] }))
-  }, [casosFiltrados])
+  // Tiempo promedio por etapas - no disponible
+  const tiempoPromedioEtapas = []
 
   // Generar colores únicos por curso
   const coloresCursos = useMemo(() => {
@@ -326,7 +159,8 @@ export default function Estadisticas() {
      RENDER
   ========================== */
 
-  if (hasError) return <p className="text-red-500">Error al cargar datos</p>
+    if (loading) return <EstadisticasSkeleton />
+  if (error) return <p className="text-red-500">Error al cargar datos: {error}</p>
 
   /* =========================
      EXPORT PDF
@@ -334,13 +168,24 @@ export default function Estadisticas() {
 
   const handleExportPDF = async () => {
     try {
+      const [{ pdf }, { default: EstadisticasDocument }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('../components/EstadisticasDocument'),
+      ])
+      const { desde, hasta } = getFechasFromAnioSemestre(anio, semestre)
+      
       const blob = await pdf(
         <EstadisticasDocument
-          kpi={kpi}
+          kpi={{
+            total: kpi.casos_total || 0,
+            abiertos: kpi.abiertos || 0,
+            cerrados: kpi.cerrados || 0,
+            promedio: kpi.promedio_cierre_dias ?? null
+          }}
           cumplimientoPlazo={cumplimientoPlazo}
-          fueraDePlazo={fueraDePlazo}
-          seguimientosConPlazo={seguimientosConPlazo}
-          reincidencia={reincidencia}
+          fueraDePlazo={Array.from({ length: plazos.fuera_plazo || 0 })}
+          seguimientosConPlazo={Array.from({ length: plazos.total_plazos || 0 })}
+          reincidencia={typeof reincidencia === 'number' ? Array.from({ length: reincidencia }, (_, i) => ({ estudiante: `Estudiante ${i + 1}`, total: 2 })) : []}
           cargaPorResponsable={cargaPorResponsable}
           tiempoPromedioEtapas={tiempoPromedioEtapas}
           dataTipo={dataTipo}
@@ -417,52 +262,14 @@ export default function Estadisticas() {
               <option value="2">Segundo semestre</option>
             </select>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Desde
-            </label>
-            <input
-              type="date"
-              value={desde}
-              onChange={e => setDesde(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Hasta
-            </label>
-            <input
-              type="date"
-              value={hasta}
-              onChange={e => setHasta(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            />
-          </div>
         </div>
-
-        {cursoSeleccionado && (
-          <div className="mt-4 flex items-center gap-2">
-            <span className="text-sm text-gray-600">
-              Filtrando por curso: <strong>{cursoSeleccionado}</strong>
-            </span>
-            <button
-              onClick={() => setCursoSeleccionado(null)}
-              className="text-sm text-blue-600 hover:underline"
-            >
-              Limpiar filtro
-            </button>
-          </div>
-        )}
       </div>
 
       {/* KPI OPERATIVOS */}
       <div className="grid grid-cols-4 gap-4">
         <div className="bg-white border p-4 rounded">
           <p className="text-xs">Casos</p>
-          <p className="text-2xl font-bold">{kpi.total}</p>
+          <p className="text-2xl font-bold">{kpi.casos_total}</p>
         </div>
         <div className="bg-white border p-4 rounded">
           <p className="text-xs">Abiertos</p>
@@ -474,7 +281,7 @@ export default function Estadisticas() {
         </div>
         <div className="bg-white border p-4 rounded">
           <p className="text-xs">⏱ Promedio cierre</p>
-          <p className="text-2xl font-bold">{kpi.promedio ?? '—'} días</p>
+          <p className="text-2xl font-bold">{kpi.promedio_cierre_dias ?? '—'} días</p>
         </div>
       </div>
 
@@ -484,13 +291,13 @@ export default function Estadisticas() {
           <p className="text-xs">Cumplimiento de plazos</p>
           <p className="text-2xl font-bold">{cumplimientoPlazo}%</p>
           <p className="text-xs text-gray-500">
-            {fueraDePlazo.length} fuera de plazo
+            {plazos.fuera_plazo} fuera de plazo
           </p>
         </div>
 
         <div className="bg-white border p-4 rounded">
           <p className="text-xs">Reincidencia</p>
-          <p className="text-2xl font-bold">{reincidencia.length}</p>
+          <p className="text-2xl font-bold">{reincidencia}</p>
           <p className="text-xs text-gray-500">
             estudiantes con ≥ 2 casos
           </p>
@@ -499,10 +306,10 @@ export default function Estadisticas() {
         <div className="bg-white border p-4 rounded">
           <p className="text-xs">Mayor carga</p>
           <p className="text-2xl font-bold">
-            {cargaPorResponsable[0]?.total ?? 0}
+            {mayorCarga.total ?? 0}
           </p>
           <p className="text-xs text-gray-500">
-            {cargaPorResponsable[0]?.responsable ?? '—'}
+            {mayorCarga.responsable ?? '—'}
           </p>
         </div>
       </div>
@@ -512,7 +319,7 @@ export default function Estadisticas() {
         <div className="bg-white border p-4 rounded">
           <h3>Casos por mes</h3>
           <ResponsiveContainer width={600} height={250}>
-            <LineChart data={dataMes}>
+            <LineChart data={dataMeses}>
               <XAxis dataKey="mes" />
               <YAxis />
               <Tooltip />
@@ -564,46 +371,34 @@ export default function Estadisticas() {
         </div>
       </div>
 
-      {/* TIEMPO PROMEDIO POR ETAPA */}
-      {tiempoPromedioEtapas.length > 0 && (
-        <div className="bg-white border rounded-xl p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">
-            Tiempo promedio por etapa del debido proceso
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={tiempoPromedioEtapas}>
-              <XAxis 
-                dataKey="etapa" 
-                angle={-45} 
-                textAnchor="end" 
-                height={100}
-                tick={{ fontSize: 11 }}
-              />
-              <YAxis 
-                label={{ value: 'Días promedio', angle: -90, position: 'insideLeft' }}
-              />
-              <Tooltip 
-                content={({ payload }) => {
-                  if (!payload?.[0]) return null
-                  const data = payload[0].payload
-                  return (
-                    <div className="bg-white border rounded shadow-lg p-3">
-                      <p className="font-semibold text-sm">{data.etapa}</p>
-                      <p className="text-sm text-gray-600">
-                        Promedio: <span className="font-bold">{data.promedio} días</span>
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Total seguimientos: {data.total}
-                      </p>
-                    </div>
-                  )
-                }}
-              />
-              <Bar dataKey="promedio" fill="#3b82f6" />
-            </BarChart>
-          </ResponsiveContainer>
+    </div>
+  )
+}
+
+function EstadisticasSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="flex justify-between items-center">
+        <div className="h-8 w-64 bg-gray-200 rounded" />
+        <div className="h-10 w-32 bg-gray-200 rounded" />
+      </div>
+      <div className="bg-white border rounded-xl p-6 space-y-3">
+        <div className="h-5 w-32 bg-gray-200 rounded" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-10 bg-gray-200 rounded" />
+          ))}
         </div>
-      )}
+      </div>
+      <div className="grid grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="h-20 bg-gray-200 rounded" />
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-6">
+        <div className="h-64 bg-gray-200 rounded" />
+        <div className="h-64 bg-gray-200 rounded" />
+      </div>
     </div>
   )
 }

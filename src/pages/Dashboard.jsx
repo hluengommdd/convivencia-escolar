@@ -7,6 +7,7 @@ import {
   Timer,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import {
   PieChart,
   Pie,
@@ -14,16 +15,18 @@ import {
   ResponsiveContainer,
   Tooltip,
   Legend,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
 } from 'recharts'
+import { BarChart } from 'recharts/es6/chart/BarChart'
+import { Bar } from 'recharts/es6/cartesian/Bar'
 
 import StatCard from '../components/StatCard'
 import UrgentCaseCard from '../components/UrgentCaseCard'
-import { useAirtable } from '../hooks/useAirtable'
+import { getCases, getControlPlazos } from '../api/db'
+import { onDataUpdated } from '../utils/refreshBus'
+import { useToast } from '../hooks/useToast'
 
 const COLORS = [
   '#ef4444',
@@ -41,28 +44,54 @@ export default function Dashboard() {
      DATA
   ========================== */
 
-  const {
-    data: casosActivos = [],
-    loading: loadingActivos,
-    error: errorActivos,
-  } = useAirtable('CASOS_ACTIVOS', 'Grid view', "Estado != 'Cerrado'")
+  const [casosActivos, setCasosActivos] = useState([])
+  const [casosCerrados, setCasosCerrados] = useState([])
+  const [alertasPlazo, setAlertasPlazo] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const { push } = useToast()
 
-  const {
-    data: casosCerrados = [],
-    loading: loadingCerrados,
-    error: errorCerrados,
-  } = useAirtable('CASOS_ACTIVOS', 'Grid view', "Estado = 'Cerrado'")
+  useEffect(() => {
+    let mounted = true
 
-  const {
-    data: alertasPlazo = [],
-    loading: loadingAlertas,
-    error: errorAlertas,
-  } = useAirtable('SEGUIMIENTOS', 'Control de Plazos')
+    async function cargar() {
+      try {
+        setLoading(true)
+        const [allCases, plazos] = await Promise.all([
+          getCases(),
+          getControlPlazos()
+        ])
 
-  const loading = loadingActivos || loadingCerrados || loadingAlertas
-  const error = errorActivos || errorCerrados || errorAlertas
+        if (!mounted) return
 
-  if (loading) return <p className="text-gray-500">Cargando datos…</p>
+        const activos = allCases.filter(c => c.fields?.Estado !== 'Cerrado')
+        const cerrados = allCases.filter(c => c.fields?.Estado === 'Cerrado')
+
+        setCasosActivos(activos)
+        setCasosCerrados(cerrados)
+        setAlertasPlazo(plazos)
+      } catch (e) {
+        console.error(e)
+        push({ type: 'error', title: 'Error al cargar dashboard', message: e?.message || 'Fallo de red' })
+        if (mounted) setError(e?.message || 'Error al cargar datos')
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+
+    cargar()
+
+    const off = onDataUpdated(() => {
+      cargar()
+    })
+
+    return () => {
+      mounted = false
+      off()
+    }
+  }, [push])
+
+  if (loading) return <DashboardSkeleton />
   if (error) return <p className="text-red-500">Error al cargar datos.</p>
 
   /* =========================
@@ -81,10 +110,23 @@ export default function Dashboard() {
   )
 
   const hoyISO = new Date().toISOString().slice(0, 10)
+  console.log('📅 Fecha de hoy:', hoyISO)
+  
   const casosHoy = casosActivos.filter(c => {
-    const f = c.fields?.Fecha_Incidente
-    return typeof f === 'string' && f.startsWith(hoyISO)
+    const fechaCreacion = c.fields?.Fecha_Creacion
+    if (!fechaCreacion) return false
+    
+    // Extraer solo la parte de la fecha (YYYY-MM-DD) del timestamp
+    const fechaSolo = fechaCreacion.split('T')[0]
+    const esHoy = fechaSolo === hoyISO
+    
+    if (esHoy) {
+      console.log('✅ Caso creado hoy:', c.fields?.Estudiante_Responsable, fechaCreacion)
+    }
+    return esHoy
   })
+  
+  console.log('📊 Total casos creados hoy:', casosHoy.length)
 
   /* =========================
      MÉTRICAS PLAZOS
@@ -383,6 +425,29 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="h-6 w-64 bg-gray-200 rounded" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-28 bg-gray-200 rounded-xl" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[4, 5, 6].map(i => (
+          <div key={i} className="h-28 bg-gray-200 rounded-xl" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="h-64 bg-gray-200 rounded-xl" />
+        <div className="h-64 bg-gray-200 rounded-xl" />
+        <div className="h-64 bg-gray-200 rounded-xl" />
       </div>
     </div>
   )

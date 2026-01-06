@@ -1,23 +1,35 @@
-import { useState } from 'react'
-import { useAirtable } from '../hooks/useAirtable'
+import { useEffect, useState } from 'react'
+import { getCases } from '../api/db'
 import SeguimientoPage from './SeguimientoPage'
 import { formatDate } from '../utils/formatDate'
 
 export default function CasosCerrados() {
-  const [refreshKey, setRefreshKey] = useState(0)
-  
-  const {
-    data: casos,
-    loading,
-    error,
-  } = useAirtable(
-    'CASOS_ACTIVOS',
-    'Grid view',
-    "Estado = 'Cerrado'",
-    refreshKey
-  )
-
+  const [casos, setCasos] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [selectedCaso, setSelectedCaso] = useState(null)
+
+  useEffect(() => {
+    let mounted = true
+
+    async function cargar() {
+      try {
+        setLoading(true)
+        const data = await getCases('Cerrado')
+        if (mounted) setCasos(data)
+      } catch (e) {
+        if (mounted) setError(e?.message || 'Error al cargar casos cerrados')
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+
+    cargar()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   if (loading) {
     return (

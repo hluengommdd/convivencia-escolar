@@ -137,14 +137,14 @@ export default function EstadisticasDocument({
             <View style={styles.kpiCard}>
               <Text style={styles.kpiLabel}>Tiempo promedio de resolución</Text>
               <Text style={styles.kpiValue}>
-                {kpi.promedio !== null ? `${kpi.promedio} días` : 'N/A'}
+                {kpi?.promedio !== null && kpi?.promedio !== undefined ? `${kpi.promedio} días` : 'N/A'}
               </Text>
             </View>
             <View style={styles.kpiCard}>
               <Text style={styles.kpiLabel}>Cumplimiento de plazos</Text>
-              <Text style={styles.kpiValue}>{cumplimientoPlazo}%</Text>
+              <Text style={styles.kpiValue}>{cumplimientoPlazo || 0}%</Text>
               <Text style={styles.kpiSubtitle}>
-                {fueraDePlazo.length} de {seguimientosConPlazo.length} fuera de plazo
+                {fueraDePlazo?.length || 0} de {seguimientosConPlazo?.length || 0} fuera de plazo
               </Text>
             </View>
           </View>
@@ -158,7 +158,7 @@ export default function EstadisticasDocument({
               <Text style={styles.tableCellBold}>Tipificación</Text>
               <Text style={[styles.tableCellBold, { textAlign: 'right' }]}>Cantidad</Text>
             </View>
-            {dataTipo.slice(0, 10).map((item, index) => (
+            {(dataTipo || []).slice(0, 10).map((item, index) => (
               <View key={index} style={styles.tableRow}>
                 <Text style={styles.tableCell}>{item.name}</Text>
                 <Text style={[styles.tableCell, { textAlign: 'right' }]}>{item.value}</Text>
@@ -175,7 +175,7 @@ export default function EstadisticasDocument({
               <Text style={styles.tableCellBold}>Curso</Text>
               <Text style={[styles.tableCellBold, { textAlign: 'right' }]}>Total</Text>
             </View>
-            {[...dataCursos]
+            {[...(dataCursos || [])]
               .sort((a, b) => b.total - a.total)
               .slice(0, 10)
               .map((item, index) => (
@@ -188,7 +188,7 @@ export default function EstadisticasDocument({
         </View>
 
         {/* REINCIDENCIA */}
-        {reincidencia.length > 0 && (
+        {(reincidencia || []).length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>4. Estudiantes con Reincidencia</Text>
             <View style={styles.table}>
@@ -196,7 +196,7 @@ export default function EstadisticasDocument({
                 <Text style={styles.tableCellBold}>Estudiante</Text>
                 <Text style={[styles.tableCellBold, { textAlign: 'right' }]}>Casos</Text>
               </View>
-              {reincidencia.slice(0, 10).map((item, index) => (
+              {(reincidencia || []).slice(0, 10).map((item, index) => (
                 <View key={index} style={styles.tableRow}>
                   <Text style={styles.tableCell}>{item.estudiante}</Text>
                   <Text style={[styles.tableCell, { textAlign: 'right' }]}>{item.total}</Text>
@@ -214,7 +214,7 @@ export default function EstadisticasDocument({
               <Text style={styles.tableCellBold}>Responsable</Text>
               <Text style={[styles.tableCellBold, { textAlign: 'right' }]}>Seguimientos</Text>
             </View>
-            {cargaPorResponsable.slice(0, 8).map((item, index) => (
+            {(cargaPorResponsable || []).slice(0, 8).map((item, index) => (
               <View key={index} style={styles.tableRow}>
                 <Text style={styles.tableCell}>{item.responsable}</Text>
                 <Text style={[styles.tableCell, { textAlign: 'right' }]}>{item.total}</Text>
@@ -224,7 +224,7 @@ export default function EstadisticasDocument({
         </View>
 
         {/* TIEMPO POR ETAPA */}
-        {tiempoPromedioEtapas.length > 0 && (
+        {(tiempoPromedioEtapas || []).length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>6. Tiempo Promedio por Etapa</Text>
             <View style={styles.table}>
@@ -233,7 +233,7 @@ export default function EstadisticasDocument({
                 <Text style={[styles.tableCellBold, { textAlign: 'right' }]}>Días</Text>
                 <Text style={[styles.tableCellBold, { textAlign: 'right' }]}>Total</Text>
               </View>
-              {tiempoPromedioEtapas.map((item, index) => (
+              {(tiempoPromedioEtapas || []).map((item, index) => (
                 <View key={index} style={styles.tableRow}>
                   <Text style={styles.tableCell}>{item.etapa}</Text>
                   <Text style={[styles.tableCell, { textAlign: 'right' }]}>{item.promedio}</Text>
