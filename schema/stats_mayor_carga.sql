@@ -11,14 +11,14 @@ AS $$
 BEGIN
   RETURN QUERY
   SELECT 
-    COALESCE(c.responsable, 'Sin responsable') AS responsable,
-    COUNT(*)::bigint AS total
-  FROM cases c
-  WHERE c.fecha_inicio BETWEEN desde AND hasta
-    AND c.responsable IS NOT NULL
-    AND c.responsable != ''
-  GROUP BY c.responsable
-  ORDER BY COUNT(*) DESC
+    COALESCE(f.responsible, 'Sin responsable') AS responsable,
+    COUNT(DISTINCT f.case_id)::bigint AS total
+  FROM case_followups f
+  WHERE f.action_date BETWEEN desde AND hasta
+    AND f.responsible IS NOT NULL
+    AND f.responsible != ''
+  GROUP BY f.responsible
+  ORDER BY COUNT(DISTINCT f.case_id) DESC
   LIMIT 1;
   
   -- Si no hay datos, devolver valores por defecto
