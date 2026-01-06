@@ -4,6 +4,29 @@ import { withRetry } from './withRetry'
 const EMPTY = ''
 const DEFAULT_STUDENT = 'N/A'
 
+/**
+ * Obtener lista única de responsables desde case_followups
+ */
+export async function getResponsables() {
+  const { data, error } = await withRetry(() =>
+    supabase
+      .from('case_followups')
+      .select('responsible')
+      .not('responsible', 'is', null)
+      .neq('responsible', '')
+      .order('responsible')
+  )
+
+  if (error) {
+    console.error('Error cargando responsables:', error)
+    return []
+  }
+
+  // Extraer valores únicos
+  const unicos = [...new Set(data.map(row => row.responsible))]
+  return unicos.filter(Boolean).sort()
+}
+
 function formatStudent(students) {
   if (!students) return DEFAULT_STUDENT
   const first = students.first_name || EMPTY

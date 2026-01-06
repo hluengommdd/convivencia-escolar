@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react'
-import { createFollowup } from '../api/db'
+import { useEffect, useRef, useState } from 'react'
+import { createFollowup, getResponsables } from '../api/db'
 import { uploadEvidenceFiles } from '../api/evidence'
 import { useToast } from '../hooks/useToast'
 
@@ -12,8 +12,18 @@ export default function SeguimientoForm({ casoId, onSaved }) {
   const [observaciones, setObservaciones] = useState('')
   const [files, setFiles] = useState([])
   const [loading, setLoading] = useState(false)
+  const [responsables, setResponsables] = useState([])
   const fileInputRef = useRef(null)
   const { push } = useToast()
+
+  // Cargar lista de responsables al montar
+  useEffect(() => {
+    async function cargar() {
+      const lista = await getResponsables()
+      setResponsables(lista)
+    }
+    cargar()
+  }, [])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -115,13 +125,18 @@ export default function SeguimientoForm({ casoId, onSaved }) {
         <option>Completada</option>
       </select>
 
-      <input
-        type="text"
+      <select
         value={responsable}
         onChange={e => setResponsable(e.target.value)}
-        placeholder="Responsable"
         className="w-full border rounded p-2"
-      />
+      >
+        <option value="">Responsable</option>
+        {responsables.map(r => (
+          <option key={r} value={r}>
+            {r}
+          </option>
+        ))}
+      </select>
 
       <textarea
         value={detalle}
