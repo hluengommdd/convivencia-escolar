@@ -128,6 +128,8 @@ export default function Estadisticas() {
   const reincidencia = stats?.reincidencia ?? 0
   const mayorCarga = stats?.mayorCarga ?? { responsable: 'Sin responsable', total: 0 }
   const mayorNivel = stats?.mayorNivel ?? { level: 'Desconocido', total: 0 }
+  const promedioSeguimientos = stats?.promedioSeguimientos ?? { promedio: 0 }
+  const promedioDiasPrimerSeguimiento = stats?.promedioDiasPrimerSeguimiento ?? { promedio_dias: 0 }
 
   const cumplimientoPlazo = plazos.cumplimiento_pct
 
@@ -318,6 +320,18 @@ export default function Estadisticas() {
           <p className="text-xs">Nivel con más casos</p>
           <p className="text-2xl font-bold">{mayorNivel.total ?? 0}</p>
           <p className="text-xs text-gray-500">{mayorNivel.level ?? '—'}</p>
+        </div>
+
+        <div className="bg-white border p-4 rounded">
+          <p className="text-xs">Promedio seguimientos por caso</p>
+          <p className="text-2xl font-bold">{Number(promedioSeguimientos.promedio ?? 0).toFixed(1)}</p>
+          <p className="text-xs text-gray-500">media de seguimientos</p>
+        </div>
+
+        <div className="bg-white border p-4 rounded">
+          <p className="text-xs">Días hasta primer seguimiento</p>
+          <p className="text-2xl font-bold">{Number(promedioDiasPrimerSeguimiento.promedio_dias ?? 0).toFixed(1)}</p>
+          <p className="text-xs text-gray-500">promedio desde incidente</p>
         </div>
       </div>
 

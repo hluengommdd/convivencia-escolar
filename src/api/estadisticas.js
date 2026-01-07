@@ -7,6 +7,8 @@ const EMPTY_STATS = {
   reincidencia: 0,
   mayorCarga: { responsable: 'Sin responsable', total: 0 },
   mayorNivel: { level: 'Desconocido', total: 0 },
+  promedioSeguimientos: { promedio: 0 },
+  promedioDiasPrimerSeguimiento: { promedio_dias: 0 },
   charts: { porMes: [], porTip: [], porCurso: [] },
 }
 
@@ -37,6 +39,8 @@ export async function loadEstadisticas({ desde, hasta }) {
       reincRes,
       cargaRes,
       mayorNivelRes,
+      promSegRes,
+      promDiasRes,
       porMesRes,
       porTipRes,
       porCursoRes,
@@ -46,6 +50,8 @@ export async function loadEstadisticas({ desde, hasta }) {
       withRetry(() => supabase.rpc('stats_reincidencia', { desde, hasta })),
       withRetry(() => supabase.rpc('stats_mayor_carga', { desde, hasta })),
       withRetry(() => supabase.rpc('stats_mayor_nivel', { desde, hasta })),
+      withRetry(() => supabase.rpc('stats_promedio_seguimientos_por_caso', { desde, hasta })),
+      withRetry(() => supabase.rpc('stats_tiempo_primer_seguimiento', { desde, hasta })),
       withRetry(() => supabase.rpc('stats_casos_por_mes', { desde, hasta })),
       withRetry(() => supabase.rpc('stats_casos_por_tipificacion', { desde, hasta })),
       withRetry(() => supabase.rpc('stats_casos_por_curso', { desde, hasta })),
@@ -74,6 +80,8 @@ export async function loadEstadisticas({ desde, hasta }) {
     const reincidencia = reincRow?.estudiantes_reincidentes ?? 0
     const mayorCarga = pickSingle(cargaRes.data, EMPTY_STATS.mayorCarga)
     const mayorNivel = pickSingle(mayorNivelRes.data, EMPTY_STATS.mayorNivel)
+    const promedioSeguimientos = pickSingle(promSegRes.data, EMPTY_STATS.promedioSeguimientos)
+    const promedioDiasPrimerSeguimiento = pickSingle(promDiasRes.data, EMPTY_STATS.promedioDiasPrimerSeguimiento)
 
     console.log('✅ Estadísticas cargadas:', { kpis, plazos, reincidencia, mayorCarga })
 
@@ -83,6 +91,8 @@ export async function loadEstadisticas({ desde, hasta }) {
       reincidencia,
       mayorCarga,
       mayorNivel,
+      promedioSeguimientos,
+      promedioDiasPrimerSeguimiento,
       charts: {
         porMes: porMesRes.data ?? EMPTY_STATS.charts.porMes,
         porTip: porTipRes.data ?? EMPTY_STATS.charts.porTip,
