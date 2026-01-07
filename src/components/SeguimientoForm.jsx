@@ -1,7 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
-import { createFollowup, getResponsables } from '../api/db'
+import { useRef, useState } from 'react'
+import { createFollowup } from '../api/db'
 import { uploadEvidenceFiles } from '../api/evidence'
 import { useToast } from '../hooks/useToast'
+
+const RESPONSABLES = [
+  'Inspector/a',
+  'Director/a Ciclo Secundario',
+  'Director/a Ciclo Primaria',
+  'Coordinador/a Ciclo Secundario',
+  'Coordinador/a Ciclo Primaria',
+  'Psicologo/a',
+  'Encargado/a Convivencia Escolar',
+]
 
 export default function SeguimientoForm({ casoId, onSaved }) {
   const [tipoAccion, setTipoAccion] = useState('')
@@ -12,18 +22,8 @@ export default function SeguimientoForm({ casoId, onSaved }) {
   const [observaciones, setObservaciones] = useState('')
   const [files, setFiles] = useState([])
   const [loading, setLoading] = useState(false)
-  const [responsables, setResponsables] = useState([])
   const fileInputRef = useRef(null)
   const { push } = useToast()
-
-  // Cargar lista de responsables al montar
-  useEffect(() => {
-    async function cargar() {
-      const lista = await getResponsables()
-      setResponsables(lista)
-    }
-    cargar()
-  }, [])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -131,7 +131,7 @@ export default function SeguimientoForm({ casoId, onSaved }) {
         className="w-full border rounded p-2"
       >
         <option value="">Responsable</option>
-        {responsables.map(r => (
+        {RESPONSABLES.map(r => (
           <option key={r} value={r}>
             {r}
           </option>
