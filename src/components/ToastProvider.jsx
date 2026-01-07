@@ -39,7 +39,7 @@ export default function ToastProvider({ children }) {
         {toasts.map(toast => (
           <div
             key={toast.id}
-            className={`min-w-[240px] max-w-sm rounded-lg shadow-lg px-4 py-3 text-sm text-white transition transform ${
+            className={`min-w-[240px] max-w-sm rounded-2xl shadow-xl px-4 py-3 text-sm text-white transition transform ${
               toast.type === 'error'
                 ? 'bg-red-600'
                 : toast.type === 'success'

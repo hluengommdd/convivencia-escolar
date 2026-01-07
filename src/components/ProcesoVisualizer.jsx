@@ -154,7 +154,7 @@ export default function ProcesoVisualizer({ seguimientos = [], compact = false, 
   }
 
   return (
-    <div className="space-y-6">
+    <div className="card space-y-6">
       {/* ALERTAS DE ETAPAS VENCIDAS */}
       {etapasVencidas.length > 0 && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">

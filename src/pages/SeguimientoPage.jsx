@@ -118,7 +118,7 @@ export default function SeguimientoPage({
   const soloLectura = readOnly || esCerrado
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="container p-6 space-y-6">
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
@@ -136,7 +136,7 @@ export default function SeguimientoPage({
           {!soloLectura && (
             <button
               onClick={cerrarCaso}
-              className="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+              className="btn-primary bg-green-600 hover:bg-green-700 px-4 py-2"
             >
               Cerrar Caso
             </button>
@@ -174,7 +174,7 @@ export default function SeguimientoPage({
                   alert('Error al generar PDF')
                 }
               }}
-              className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+              className="btn-primary bg-blue-600 hover:bg-blue-700 px-4 py-2"
             >
               Exportar Informe
             </button>
@@ -198,7 +198,7 @@ export default function SeguimientoPage({
       </div>
 
       {/* RESUMEN */}
-      <div className="bg-white border rounded-xl p-4 grid grid-cols-2 gap-4 text-sm">
+      <div className="card grid grid-cols-2 gap-4 text-sm">
         <p><strong>Estudiante:</strong> {caso.fields.Estudiante_Responsable || 'N/A'}</p>
         <p><strong>Curso:</strong> {caso.fields.Curso_Incidente || 'N/A'}</p>
         <p><strong>Fecha / Hora:</strong>{' '} {caso.fields.Fecha_Incidente ? formatDate(caso.fields.Fecha_Incidente) : 'N/A'} ·{' '} {caso.fields.Hora_Incidente || 'N/A'}</p>
@@ -212,10 +212,10 @@ export default function SeguimientoPage({
 
       {/* BOTÓN NUEVA ACCIÓN */}
       {!soloLectura && !mostrarForm && (
-        <div className="bg-white border border-dashed border-gray-300 rounded-xl p-4 flex justify-center">
+        <div className="card border-dashed border-gray-300 flex justify-center">
           <button
             onClick={() => setMostrarForm(true)}
-            className="px-6 py-3 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition"
+            className="btn-primary px-6 py-3 text-sm font-semibold"
           >
             + Nueva Acción
           </button>
@@ -223,7 +223,7 @@ export default function SeguimientoPage({
       )}
 
       {/* HISTORIAL DE SEGUIMIENTOS */}
-      <div className="bg-white border rounded-xl p-6">
+      <div className="card">
         <h2 className="text-xl font-bold text-gray-900 mb-4">
           Control de Plazos / Seguimientos
         </h2>
@@ -248,7 +248,7 @@ export default function SeguimientoPage({
       </div>
 
       {/* VISUALIZADOR DE PROCESO */}
-      <div className="bg-white border rounded-xl p-6">
+      <div className="card">
         <h2 className="text-xl font-bold text-gray-900 mb-4">
           Progreso del Debido Proceso
         </h2>
@@ -261,7 +261,7 @@ export default function SeguimientoPage({
       {/* MODAL */}
       {!soloLectura && mostrarForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white w-full max-w-lg rounded-xl shadow-xl p-6 relative">
+          <div className="glass w-full max-w-lg p-6 relative">
             <button
               onClick={() => setMostrarForm(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"

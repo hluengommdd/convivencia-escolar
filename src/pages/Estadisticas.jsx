@@ -16,7 +16,15 @@ import { loadEstadisticas, getFechasFromAnioSemestre } from '../api/estadisticas
 import { onDataUpdated } from '../utils/refreshBus'
 import { useToast } from '../hooks/useToast'
 
-const COLORS = ['#ef4444', '#f59e0b', '#3b82f6', '#10b981']
+// Color palette for Tipificacion_Conducta (consistent across app)
+const TIPOS_COLORS = {
+  'Leve': '#10b981',       // green
+  'Grave': '#eab308',      // yellow
+  'Muy Grave': '#8b5cf6',  // purple
+  'Gravísima': '#ef4444',  // red
+}
+
+const COLORS = Object.values(TIPOS_COLORS)
 
 /* =========================
    COMPONENTE
@@ -143,18 +151,14 @@ export default function Estadisticas() {
   const coloresCursos = useMemo(() => {
     const cursos = dataCursos.map(d => d.curso)
     const colores = {}
-    
-    // Paleta de colores vibrantes
-    const palette = [
-      '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6',
-      '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16',
-      '#6366f1', '#f43f5e', '#22c55e', '#eab308', '#a855f7'
-    ]
-    
+
+    // Use TIPOS_COLORS palette cyclically for course bars to keep visual consistency
+    const tipoPalette = Object.values(TIPOS_COLORS)
+
     cursos.forEach((curso, index) => {
-      colores[curso] = palette[index % palette.length]
+      colores[curso] = tipoPalette[index % tipoPalette.length]
     })
-    
+
     return colores
   }, [dataCursos])
 
@@ -215,21 +219,21 @@ export default function Estadisticas() {
   }
 
   return (
-    <div className="space-y-8 print-container">
+    <div className="container space-y-8 print-container">
       <div className="flex justify-between items-start">
         <h1 className="text-2xl font-bold">
           Estadísticas de Convivencia Escolar
         </h1>
         <button
           onClick={handleExportPDF}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm"
+          className="btn-primary bg-blue-600 hover:bg-blue-700 transition shadow-sm px-4 py-2"
         >
           Exportar PDF
         </button>
       </div>
 
       {/* FILTROS */}
-      <div className="bg-white border rounded-xl p-6">
+      <div className="card">
         <h2 className="font-semibold text-gray-900 mb-4">Filtros</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
@@ -270,27 +274,31 @@ export default function Estadisticas() {
 
       {/* KPI OPERATIVOS */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white border p-4 rounded">
-          <p className="text-xs">Casos</p>
-          <p className="text-2xl font-bold">{kpi.casos_total}</p>
-        </div>
-        <div className="bg-white border p-4 rounded">
-          <p className="text-xs">Abiertos</p>
-          <p className="text-2xl font-bold">{kpi.abiertos}</p>
-        </div>
-        <div className="bg-white border p-4 rounded">
-          <p className="text-xs">Cerrados</p>
-          <p className="text-2xl font-bold">{kpi.cerrados}</p>
-        </div>
-        <div className="bg-white border p-4 rounded">
-          <p className="text-xs">⏱ Promedio cierre</p>
-          <p className="text-2xl font-bold">{kpi.promedio_cierre_dias ?? '—'} días</p>
-        </div>
+        {(() => {
+          const kpiItems = [
+            { label: 'Casos', value: kpi.casos_total },
+            { label: 'Abiertos', value: kpi.abiertos },
+            { label: 'Cerrados', value: kpi.cerrados },
+            { label: '⏱ Promedio cierre', value: kpi.promedio_cierre_dias ?? '—', suffix: 'días' }
+          ]
+
+          const palette = Object.values(TIPOS_COLORS)
+
+          return kpiItems.map((item, idx) => (
+            <div key={item.label} className="card p-4 flex">
+              <div className="w-1.5 rounded-l" style={{ background: palette[idx % palette.length] }} />
+              <div className="flex-1 pl-3">
+                <p className="text-xs">{item.label}</p>
+                <p className="text-2xl font-bold">{item.value} {item.suffix || ''}</p>
+              </div>
+            </div>
+          ))
+        })()}
       </div>
 
       {/* KPI DIRECTIVOS */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white border p-4 rounded">
+        <div className="card p-4">
           <p className="text-xs">Cumplimiento de plazos</p>
           <p className="text-2xl font-bold">{cumplimientoPlazo}%</p>
           <p className="text-xs text-gray-500">
@@ -298,7 +306,7 @@ export default function Estadisticas() {
           </p>
         </div>
 
-        <div className="bg-white border p-4 rounded">
+        <div className="card p-4">
           <p className="text-xs">Reincidencia</p>
           <p className="text-2xl font-bold">{reincidencia}</p>
           <p className="text-xs text-gray-500">
@@ -337,9 +345,9 @@ export default function Estadisticas() {
 
       {/* GRÁFICOS (LOS TUYOS) */}
       <div className="grid grid-cols-2 gap-6">
-        <div className="bg-white border p-4 rounded">
+        <div className="card p-4">
           <h3>Casos por mes</h3>
-          <ResponsiveContainer width={600} height={250}>
+          <ResponsiveContainer width="100%" height={250}>
             <LineChart data={dataMeses}>
               <XAxis dataKey="mes" />
               <YAxis />
@@ -349,9 +357,19 @@ export default function Estadisticas() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white border p-4 rounded">
+        <div className="card p-4">
           <h3>Casos por tipificación</h3>
-          <ResponsiveContainer width={600} height={250}>
+          <div className="flex items-center gap-3 text-sm text-gray-600 mb-3">
+            {/* Legend using the same color mapping */}
+            {Object.entries(TIPOS_COLORS).map(([name, color]) => (
+              <div key={name} className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full" style={{ background: color }} />
+                <span>{name}</span>
+              </div>
+            ))}
+          </div>
+
+          <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie 
                 data={dataTipo} 
@@ -361,8 +379,8 @@ export default function Estadisticas() {
                 label={(entry) => entry.name}
                 labelLine={false}
               >
-                {dataTipo.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                {dataTipo.map((entry, i) => (
+                  <Cell key={i} fill={TIPOS_COLORS[entry.name] || COLORS[i % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip 
@@ -372,9 +390,9 @@ export default function Estadisticas() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white border p-4 rounded col-span-2">
+        <div className="card p-4 col-span-2">
           <h3>Casos por curso</h3>
-          <ResponsiveContainer width={1200} height={250}>
+          <ResponsiveContainer width="100%" height={250}>
             <BarChart data={dataCursos}>
               <XAxis dataKey="curso" />
               <YAxis />

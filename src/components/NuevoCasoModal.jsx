@@ -57,10 +57,10 @@ const TIPIFICACIONES = {
 /* ================= COLORES ================= */
 
 const TIPOS_COLOR = {
-  Leve: 'bg-blue-100 text-blue-700 border-blue-200',
+  Leve: 'bg-green-100 text-green-800 border-green-200',
   Grave: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  'Muy Grave': 'bg-orange-100 text-orange-700 border-orange-200',
-  Gravísima: 'bg-red-100 text-red-700 border-red-200'
+  'Muy Grave': 'bg-purple-100 text-purple-800 border-purple-200',
+  Gravísima: 'bg-red-100 text-red-800 border-red-200'
 }
 
 export default function NuevoCasoModal({ onClose, onSaved }) {
@@ -179,7 +179,9 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white w-full max-w-6xl rounded-xl shadow-xl p-6 relative space-y-4">
+      <div className="w-full max-w-6xl relative space-y-4">
+
+        <div className="glass bg-white/80 rounded-xl p-6 shadow-xl relative">
 
         {guardando && (
           <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center rounded-xl z-10">
@@ -310,10 +312,11 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
             type="button"
             onClick={guardarCaso}
             disabled={guardando}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+            className="btn-primary disabled:opacity-50"
           >
             {guardando ? 'Guardando…' : 'Guardar'}
           </button>
+        </div>
         </div>
 
       </div>

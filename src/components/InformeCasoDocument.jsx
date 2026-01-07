@@ -9,6 +9,13 @@ import {
 } from '@react-pdf/renderer'
 import logoColegio from '../assets/veritas.jpg'
 
+const TIPOS_COLORS = {
+  'Leve': '#10b981',
+  'Grave': '#eab308',
+  'Muy Grave': '#8b5cf6',
+  'Gravísima': '#ef4444',
+}
+
 const styles = StyleSheet.create({
   page: { padding: 24, fontSize: 10, fontFamily: 'Helvetica' },
   header: { 
@@ -200,16 +207,26 @@ export default function InformeCasoDocument({ caso, seguimientos = [] }) {
               <Text style={{ fontSize: 9, color: '#6b7280' }}>No se registraron seguimientos para este caso.</Text>
             </View>
           ) : (
-            seguimientos.map((s, i) => (
-              <View key={s.id || i} style={styles.seguimientoItem}>
-                <Text style={styles.seguimientoHeader}>
-                  {s.fields?.Fecha || 'Sin fecha'} · {s.fields?.Tipo_Accion || 'Sin tipo'}
-                </Text>
-                <Text style={styles.seguimientoDetail}>
-                  {s.fields?.Detalle || 'Sin detalle'}
-                </Text>
-              </View>
-            ))
+            seguimientos.map((s, i) => {
+              const tipo = s.fields?.Tipificacion_Conducta || ''
+              const color = TIPOS_COLORS[tipo] || '#3b82f6'
+              return (
+                <View
+                  key={s.id || i}
+                  style={{
+                    ...styles.seguimientoItem,
+                    borderLeftColor: color,
+                  }}
+                >
+                  <Text style={styles.seguimientoHeader}>
+                    {s.fields?.Fecha || 'Sin fecha'} · {s.fields?.Tipo_Accion || 'Sin tipo'}
+                  </Text>
+                  <Text style={styles.seguimientoDetail}>
+                    {s.fields?.Detalle || 'Sin detalle'}
+                  </Text>
+                </View>
+              )
+            })
           )}
         </View>
 

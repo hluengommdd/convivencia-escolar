@@ -83,11 +83,11 @@ export default function SeguimientoForm({ casoId, onSaved }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
+    <form onSubmit={handleSubmit} className="card space-y-3">
       <select
         value={tipoAccion}
         onChange={e => setTipoAccion(e.target.value)}
-        className="w-full border rounded p-2"
+        className="w-full border border-gray-200 rounded-lg p-3"
         required
       >
         <option value="">Tipo de acción</option>
@@ -102,7 +102,7 @@ export default function SeguimientoForm({ casoId, onSaved }) {
       <select
         value={etapa}
         onChange={e => setEtapa(e.target.value)}
-        className="w-full border rounded p-2"
+        className="w-full border border-gray-200 rounded-lg p-3"
         required
       >
         <option value="">Etapa del debido proceso</option>
@@ -119,7 +119,7 @@ export default function SeguimientoForm({ casoId, onSaved }) {
       <select
         value={estado}
         onChange={e => setEstado(e.target.value)}
-        className="w-full border rounded p-2"
+        className="w-full border border-gray-200 rounded-lg p-3"
       >
         <option>En Proceso</option>
         <option>Completada</option>
@@ -128,7 +128,7 @@ export default function SeguimientoForm({ casoId, onSaved }) {
       <select
         value={responsable}
         onChange={e => setResponsable(e.target.value)}
-        className="w-full border rounded p-2"
+        className="w-full border border-gray-200 rounded-lg p-3"
       >
         <option value="">Responsable</option>
         {RESPONSABLES.map(r => (
@@ -142,14 +142,14 @@ export default function SeguimientoForm({ casoId, onSaved }) {
         value={detalle}
         onChange={e => setDetalle(e.target.value)}
         placeholder="Detalle de la acción"
-        className="w-full border rounded p-2 min-h-[80px]"
+        className="w-full border border-gray-200 rounded-lg p-3 min-h-[80px]"
       />
 
       <textarea
         value={observaciones}
         onChange={e => setObservaciones(e.target.value)}
         placeholder="Observaciones"
-        className="w-full border rounded p-2 min-h-[80px]"
+        className="w-full border border-gray-200 rounded-lg p-3 min-h-[80px]"
       />
 
       <div className="space-y-2">
@@ -173,7 +173,7 @@ export default function SeguimientoForm({ casoId, onSaved }) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700 disabled:opacity-50"
+        className="btn-primary w-full disabled:opacity-50"
       >
         {loading ? 'Guardando…' : 'Registrar acción'}
       </button>

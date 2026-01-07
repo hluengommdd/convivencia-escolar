@@ -23,21 +23,14 @@ export default function CasosActivos() {
         setLoading(true)
         const data = await getCases()
 
-        // 🔹 SOLO CASOS NO CERRADOS
-        const activos = data.filter(
-          c => c.fields?.Estado !== 'Cerrado'
-        )
-
+        // Solo casos no cerrados
+        const activos = data.filter(c => c.fields?.Estado !== 'Cerrado')
         setCasos(activos)
 
-        // 🔥 SELECCIONAR CASO AUTOMÁTICAMENTE DESDE DASHBOARD / ALERTAS
+        // Seleccionar caso automáticamente desde query param
         if (selectedId) {
-          const encontrado = activos.find(
-            c => c.id === selectedId
-          )
-          if (encontrado) {
-            setSelectedCaso(encontrado)
-          }
+          const encontrado = activos.find(c => c.id === selectedId)
+          if (encontrado) setSelectedCaso(encontrado)
         }
       } catch (e) {
         console.error(e)
@@ -118,9 +111,9 @@ export default function CasosActivos() {
                       className={`px-2 py-1 rounded-full text-xs font-medium
                         ${
                           caso.fields.Tipificacion_Conducta === 'Leve'
-                            ? 'bg-blue-100 text-blue-800'
+                            ? 'bg-green-100 text-green-800'
                             : caso.fields.Tipificacion_Conducta === 'Muy Grave'
-                            ? 'bg-orange-100 text-orange-800'
+                            ? 'bg-purple-100 text-purple-800'
                             : caso.fields.Tipificacion_Conducta === 'Gravísima'
                             ? 'bg-red-100 text-red-800'
                             : 'bg-yellow-100 text-yellow-800'
@@ -141,7 +134,7 @@ export default function CasosActivos() {
         </div>
 
         {/* PANEL DERECHO */}
-        <div className="flex-1 bg-white border rounded-xl overflow-hidden flex flex-col">
+        <div className="flex-1 card overflow-hidden flex flex-col">
           {selectedCaso ? (
             <div className="flex-1 overflow-y-auto">
               <CaseDetailPanel

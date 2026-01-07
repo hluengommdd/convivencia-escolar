@@ -22,9 +22,9 @@ export default function Sidebar() {
     'text-gray-600 hover:bg-gray-50 hover:shadow-sm hover:translate-x-1'
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200/50 flex flex-col shadow-xl">
+    <aside className="w-64 flex flex-col shadow-xl bg-white/60 glass border-r border-gray-200/40">
       {/* HEADER CON LOGO */}
-      <div className="p-6 border-b border-gray-200/50 flex items-center gap-3 bg-gradient-to-br from-white to-gray-50">
+      <div className="p-5 border-b border-gray-200/40 flex items-center gap-3 bg-transparent">
         <img
           src={logoColegio}
           alt="Logo Colegio"

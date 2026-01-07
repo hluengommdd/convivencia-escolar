@@ -1,8 +1,8 @@
 export default function CaseRow({ caso, selected, onSelect }) {
   const gravedadMap = {
-    Leve: { label: 'Leve', color: 'bg-blue-100 text-blue-800' },
+    Leve: { label: 'Leve', color: 'bg-green-100 text-green-800' },
     Grave: { label: 'Grave', color: 'bg-yellow-100 text-yellow-800' },
-    'Muy Grave': { label: 'Muy Grave', color: 'bg-orange-100 text-orange-800' },
+    'Muy Grave': { label: 'Muy Grave', color: 'bg-purple-100 text-purple-800' },
     Gravísima: { label: 'Gravísima', color: 'bg-red-100 text-red-800' },
 
   }
@@ -16,8 +16,8 @@ export default function CaseRow({ caso, selected, onSelect }) {
   return (
     <div
       onClick={() => onSelect(caso)}
-      className={`grid grid-cols-6 gap-4 p-5 border rounded-2xl cursor-pointer transition-all duration-200
-        ${selected ? 'ring-2 ring-red-500 bg-gradient-to-br from-red-50 to-red-100/50 shadow-md' : 'bg-white hover:bg-gray-50 hover:shadow-sm'}`}
+      className={`grid grid-cols-6 gap-4 p-5 cursor-pointer transition-all duration-200 rounded-2xl
+        ${selected ? 'ring-2 ring-red-500 shadow-md bg-red-50/40 transform scale-[1.01]' : 'card hover:shadow-sm'}`}
     >
       <div className="text-sm font-semibold text-gray-900">{caso.fields.ID_Caso}</div>
 

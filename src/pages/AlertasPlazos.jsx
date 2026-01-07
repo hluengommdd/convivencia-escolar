@@ -77,11 +77,11 @@ export default function AlertasPlazos() {
   if (error) return <p className="text-red-500">Error: {error}</p>
 
   return (
-    <div className="space-y-6">
+    <div className="container space-y-6">
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Alertas y Control de Plazos</h1>
+          <h1 className="page-title">Alertas y Control de Plazos</h1>
           <p className="text-sm text-gray-600 mt-1">
             Monitoreo operativo del debido proceso · Actualizado en tiempo real
           </p>
@@ -97,16 +97,16 @@ export default function AlertasPlazos() {
           color="red"
         />
         <CardResumen 
-          icon={<AlertTriangle className="text-orange-600" size={24} />}
+          icon={<AlertTriangle className="text-purple-600" size={24} />}
           label="Urgentes"
           value={resumen.naranjos}
-          color="orange"
+          color="purple"
         />
         <CardResumen 
-          icon={<Clock className="text-yellow-600" size={24} />}
+          icon={<Clock className="text-green-600" size={24} />}
           label="Próximos"
           value={resumen.amarillos}
-          color="yellow"
+          color="green"
         />
         <CardResumen 
           icon={<CheckCircle className="text-green-600" size={24} />}
@@ -139,7 +139,7 @@ export default function AlertasPlazos() {
         items={clasificados.naranjos}
         casos={casos || []}
         navigate={navigate}
-        tone="orange"
+        tone="purple"
       />
 
       <Seccion
@@ -148,7 +148,7 @@ export default function AlertasPlazos() {
         items={clasificados.amarillos}
         casos={casos || []}
         navigate={navigate}
-        tone="yellow"
+        tone="green"
         compact
       />
 
@@ -168,6 +168,7 @@ export default function AlertasPlazos() {
 function CardResumen({ icon, label, value, color }) {
   const colorClasses = {
     red: 'bg-red-50 border-red-200',
+    purple: 'bg-purple-50 border-purple-200',
     orange: 'bg-orange-50 border-orange-200',
     yellow: 'bg-yellow-50 border-yellow-200',
     green: 'bg-green-50 border-green-200',
@@ -175,7 +176,7 @@ function CardResumen({ icon, label, value, color }) {
   }
 
   return (
-    <div className={`border-2 rounded-xl p-4 ${colorClasses[color]}`}>
+    <div className={`rounded-2xl p-4 card ${colorClasses[color]}`}>
       <div className="flex items-center justify-between mb-2">
         {icon}
         <span className={`text-3xl font-bold ${color === 'gray' ? 'text-gray-700' : `text-${color}-700`}`}>
@@ -215,6 +216,20 @@ function Seccion({
       text: 'text-red-900',
       badge: 'bg-red-100 text-red-800'
     },
+    purple: {
+      border: 'border-purple-200',
+      bg: 'bg-purple-50',
+      hover: 'hover:bg-purple-100 hover:shadow-md',
+      text: 'text-purple-900',
+      badge: 'bg-purple-100 text-purple-800'
+    },
+    green: {
+      border: 'border-green-200',
+      bg: 'bg-green-50',
+      hover: 'hover:bg-green-100 hover:shadow-md',
+      text: 'text-green-900',
+      badge: 'bg-green-100 text-green-800'
+    },
     orange: {
       border: 'border-orange-200',
       bg: 'bg-orange-50',
@@ -236,7 +251,7 @@ function Seccion({
   return (
     <section className="space-y-4">
       <div className="flex items-center gap-3">
-        <h2 className="text-xl font-bold text-gray-900">{titulo}</h2>
+        <h2 className="section-title">{titulo}</h2>
         <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-semibold">
           {items.length}
         </span>

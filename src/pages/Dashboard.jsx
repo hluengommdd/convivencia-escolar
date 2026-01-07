@@ -37,6 +37,13 @@ const COLORS = [
   '#a855f7',
 ]
 
+const TIPOS_COLORS = {
+  Leve: '#10b981', // green
+  Grave: '#eab308', // yellow
+  'Muy Grave': '#8b5cf6', // purple
+  Gravísima: '#ef4444', // red
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
 
@@ -166,11 +173,18 @@ export default function Dashboard() {
   const dataTipo = Object.entries(porTipo).map(([name, value]) => ({ name, value }))
 
   // 2) Plazos (pie)
+  // Reorder and recolor: Próximos (verde), Urgentes (morado), Vencidos (rojo)
   const dataPlazos = [
-    { name: 'Vencidos', value: resumenPlazos.rojos },
-    { name: 'Urgentes', value: resumenPlazos.naranjos },
     { name: 'Próximos', value: resumenPlazos.amarillos },
+    { name: 'Urgentes', value: resumenPlazos.naranjos },
+    { name: 'Vencidos', value: resumenPlazos.rojos },
   ]
+
+  const PLAZOS_COLORS = {
+    'Próximos': '#10b981', // green
+    'Urgentes': '#8b5cf6', // purple
+    'Vencidos': '#ef4444', // red
+  }
 
   // 3) Casos por curso (bar) — solo activos
   const porCurso = {}
@@ -190,7 +204,7 @@ export default function Dashboard() {
   ========================== */
 
   return (
-    <div className="space-y-8">
+    <div className="container space-y-8">
       <p className="text-sm text-gray-600 font-medium">
         Resumen Operativo de Convivencia Escolar · Año lectivo 2025
       </p>
@@ -251,7 +265,7 @@ export default function Dashboard() {
 
       {/* GRÁFICOS */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="bg-white border border-gray-200/50 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <div className="card">
           <h3 className="font-semibold text-gray-900 mb-4">Casos activos por tipificación</h3>
 
           {dataTipo.length === 0 ? (
@@ -267,8 +281,11 @@ export default function Dashboard() {
                   label={(entry) => entry.name}
                   labelLine={false}
                 >
-                  {dataTipo.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  {dataTipo.map((entry, i) => (
+                    <Cell
+                      key={i}
+                      fill={TIPOS_COLORS[entry.name] || COLORS[i % COLORS.length]}
+                    />
                   ))}
                 </Pie>
                 <Tooltip 
@@ -279,7 +296,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="bg-white border border-gray-200/50 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <div className="card">
           <h3 className="font-semibold text-gray-900 mb-4">Estado de plazos (Control de Plazos)</h3>
 
           {dataPlazos.every(x => x.value === 0) ? (
@@ -294,9 +311,9 @@ export default function Dashboard() {
                   outerRadius={80} 
                   label={false}
                 >
-                  <Cell fill="#ef4444" />
-                  <Cell fill="#f97316" />
-                  <Cell fill="#eab308" />
+                  {dataPlazos.map((entry, i) => (
+                    <Cell key={i} fill={PLAZOS_COLORS[entry.name] || COLORS[i % COLORS.length]} />
+                  ))}
                 </Pie>
                 <Tooltip />
                 <Legend 
@@ -309,7 +326,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="bg-white border border-gray-200/50 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <div className="card">
           <h3 className="font-semibold text-gray-900 mb-4">Casos activos por curso (Top 10)</h3>
 
           {dataCurso.length === 0 ? (
@@ -331,7 +348,7 @@ export default function Dashboard() {
       {/* BLOQUES OPERATIVOS */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* CASOS URGENTES */}
-        <div className="xl:col-span-2 bg-white border border-gray-200/50 rounded-2xl p-6 shadow-sm">
+        <div className="xl:col-span-2 card">
           <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <AlertTriangle size={18} className="text-red-600" />
             Casos que requieren atención inmediata
@@ -363,7 +380,7 @@ export default function Dashboard() {
         </div>
 
         {/* ALERTAS DE PLAZOS (clic → Seguimiento) */}
-        <div className="bg-white border border-gray-200/50 rounded-2xl p-6 shadow-sm">
+        <div className="card">
           <h2 className="font-semibold text-gray-900 mb-4">Alertas de Plazos</h2>
 
           {topAlertas.length === 0 ? (
@@ -376,6 +393,15 @@ export default function Dashboard() {
               {topAlertas.map(a => {
                 const casoId = a.fields?.CASOS_ACTIVOS?.[0]
                 const disabled = !casoId
+
+                const alertaTxt = a.fields?.Alerta_Urgencia || ''
+                const plazoKey = alertaTxt.startsWith('🔴')
+                  ? 'Vencidos'
+                  : alertaTxt.startsWith('🟠')
+                  ? 'Urgentes'
+                  : alertaTxt.startsWith('🟡')
+                  ? 'Próximos'
+                  : 'Próximos'
 
                 return (
                   <div
@@ -392,13 +418,19 @@ export default function Dashboard() {
                     }
                   >
                     <div className="flex justify-between items-start gap-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate">
-                          {a.fields?.Etapa_Debido_Proceso || 'Etapa sin dato'}
-                        </p>
-                        <p className="text-xs text-gray-600 truncate">
-                          Responsable: {a.fields?.Responsable || '—'}
-                        </p>
+                      <div className="flex items-start gap-3 min-w-0">
+                        <span
+                          className="w-3 h-3 rounded-sm mt-1.5"
+                          style={{ background: PLAZOS_COLORS[plazoKey] }}
+                        />
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {a.fields?.Etapa_Debido_Proceso || 'Etapa sin dato'}
+                          </p>
+                          <p className="text-xs text-gray-600 truncate">
+                            Responsable: {a.fields?.Responsable || '—'}
+                          </p>
+                        </div>
                       </div>
 
                       <div className="text-right shrink-0">

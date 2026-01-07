@@ -59,15 +59,15 @@ export default function Layout() {
   }, [push])
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+    <div className="flex h-screen overflow-hidden">
       {/* SIDEBAR */}
       <Sidebar />
 
       {/* CONTENIDO */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
         {/* HEADER SUPERIOR */}
-        <div className="flex justify-between items-center p-8 pb-4 shrink-0 bg-white/50 backdrop-blur-sm border-b border-gray-200/50">
-          <h1 className="text-3xl font-bold text-gray-800 tracking-tight">
+        <div className="glass flex justify-between items-center p-6 pb-4 shrink-0 border-b border-gray-200/40">
+          <h1 className="text-2xl font-semibold text-gray-800 tracking-tight">
             {getTitle()}
           </h1>
 
@@ -82,7 +82,7 @@ export default function Layout() {
                 Supabase caído
               </span>
             )}
-            <span>
+            <span className="text-sm text-gray-600">
               {new Date().toLocaleDateString('es-CL', {
                 weekday: 'long',
                 day: 'numeric',

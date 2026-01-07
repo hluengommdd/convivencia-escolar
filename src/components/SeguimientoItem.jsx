@@ -14,6 +14,13 @@ export default function SeguimientoItem({ seg, readOnly = false }) {
     Completada: 'bg-green-100 text-green-800',
   }
 
+  const TIPOS_COLORS = {
+    'Leve': '#10b981',
+    'Grave': '#eab308',
+    'Muy Grave': '#8b5cf6',
+    'Gravísima': '#ef4444',
+  }
+
   const [evidencias, setEvidencias] = useState([])
   const [loading, setLoading] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
@@ -66,15 +73,18 @@ export default function SeguimientoItem({ seg, readOnly = false }) {
     }
   }
 
+  const tipo = seg.fields?.Tipificacion_Conducta
+  const tipoColor = TIPOS_COLORS[tipo] || '#3b82f6'
+
   return (
     <div className="relative pl-6">
       {/* Línea vertical */}
-      <div className="absolute left-2 top-0 h-full w-px bg-gray-200" />
+      <div className="absolute left-2 top-0 h-full w-px" style={{ backgroundColor: tipoColor, opacity: 0.12 }} />
 
       {/* Punto */}
-      <div className="absolute left-1.5 top-2 w-3 h-3 rounded-full bg-blue-500" />
+      <div className="absolute left-1.5 top-2 w-3 h-3 rounded-full" style={{ backgroundColor: tipoColor }} />
 
-      <div className="bg-white border rounded-lg p-4">
+      <div className="card">
         <div className="flex justify-between items-start">
           <p className="text-base font-bold text-gray-900">
             {seg.fields?.Tipo_Accion}
@@ -117,7 +127,7 @@ export default function SeguimientoItem({ seg, readOnly = false }) {
               {evidencias.map(row => (
                 <li
                   key={row.id}
-                  className="flex items-center justify-between text-sm bg-gray-50 border rounded px-3 py-2"
+                  className="flex items-center justify-between text-sm bg-white border rounded px-3 py-2 shadow-sm"
                 >
                   <div className="truncate">
                     <p className="font-medium text-gray-800 truncate">{row.file_name}</p>

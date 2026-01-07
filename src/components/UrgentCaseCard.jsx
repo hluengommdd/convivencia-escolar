@@ -1,11 +1,13 @@
 export default function UrgentCaseCard({ title, student, date, level }) {
   const levelStyles = {
-    'Muy Grave': 'bg-red-100 text-red-700 shadow-sm',
-    'Gravísima': 'bg-red-200 text-red-800 shadow-sm',
+    Leve: 'bg-green-100 text-green-800',
+    Grave: 'bg-yellow-100 text-yellow-800',
+    'Muy Grave': 'bg-purple-100 text-purple-800',
+    Gravísima: 'bg-red-100 text-red-800',
   }
 
   return (
-    <div className="bg-gradient-to-br from-red-50 to-red-100/50 border border-red-200/50 rounded-2xl p-5 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
+    <div className="card mb-3">
       <div className="flex justify-between items-start">
         <div>
           <p className="font-semibold text-gray-900 text-base">{title}</p>
