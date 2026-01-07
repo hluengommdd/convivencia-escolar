@@ -6,6 +6,7 @@ const EMPTY_STATS = {
   plazos: { total_plazos: 0, fuera_plazo: 0, dentro_plazo: 0, cumplimiento_pct: 0 },
   reincidencia: 0,
   mayorCarga: { responsable: 'Sin responsable', total: 0 },
+  mayorNivel: { level: 'Desconocido', total: 0 },
   charts: { porMes: [], porTip: [], porCurso: [] },
 }
 
@@ -35,6 +36,7 @@ export async function loadEstadisticas({ desde, hasta }) {
       plazosRes,
       reincRes,
       cargaRes,
+      mayorNivelRes,
       porMesRes,
       porTipRes,
       porCursoRes,
@@ -43,6 +45,7 @@ export async function loadEstadisticas({ desde, hasta }) {
       withRetry(() => supabase.rpc('stats_cumplimiento_plazos', { desde, hasta })),
       withRetry(() => supabase.rpc('stats_reincidencia', { desde, hasta })),
       withRetry(() => supabase.rpc('stats_mayor_carga', { desde, hasta })),
+      withRetry(() => supabase.rpc('stats_mayor_nivel', { desde, hasta })),
       withRetry(() => supabase.rpc('stats_casos_por_mes', { desde, hasta })),
       withRetry(() => supabase.rpc('stats_casos_por_tipificacion', { desde, hasta })),
       withRetry(() => supabase.rpc('stats_casos_por_curso', { desde, hasta })),
@@ -54,6 +57,7 @@ export async function loadEstadisticas({ desde, hasta }) {
       plazosRes.error,
       reincRes.error,
       cargaRes.error,
+      mayorNivelRes.error,
       porMesRes.error,
       porTipRes.error,
       porCursoRes.error,
@@ -69,6 +73,7 @@ export async function loadEstadisticas({ desde, hasta }) {
     const reincRow = pickSingle(reincRes.data, { estudiantes_reincidentes: 0 })
     const reincidencia = reincRow?.estudiantes_reincidentes ?? 0
     const mayorCarga = pickSingle(cargaRes.data, EMPTY_STATS.mayorCarga)
+    const mayorNivel = pickSingle(mayorNivelRes.data, EMPTY_STATS.mayorNivel)
 
     console.log('✅ Estadísticas cargadas:', { kpis, plazos, reincidencia, mayorCarga })
 
@@ -77,6 +82,7 @@ export async function loadEstadisticas({ desde, hasta }) {
       plazos,
       reincidencia,
       mayorCarga,
+      mayorNivel,
       charts: {
         porMes: porMesRes.data ?? EMPTY_STATS.charts.porMes,
         porTip: porTipRes.data ?? EMPTY_STATS.charts.porTip,
