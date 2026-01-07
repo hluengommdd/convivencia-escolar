@@ -8,11 +8,12 @@ RETURNS TABLE (
 ) 
 LANGUAGE sql
 AS $$
-  SELECT COALESCE(c.level, 'Desconocido') AS level,
+  SELECT COALESCE(s.level, 'Desconocido') AS level,
          COUNT(*)::bigint AS total
   FROM cases c
+  LEFT JOIN students s ON s.id = c.student_id
   WHERE (c.incident_date BETWEEN $1 AND $2)
-  GROUP BY c.level
+  GROUP BY s.level
   ORDER BY COUNT(*) DESC
   LIMIT 1;
 $$;
