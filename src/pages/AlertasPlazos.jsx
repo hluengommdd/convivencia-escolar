@@ -46,6 +46,9 @@ export default function AlertasPlazos() {
     }
 
     ;(seguimientos || []).forEach(s => {
+      // Excluir alertas de casos cerrados
+      if (s.fields?.Estado === 'Cerrado') return
+
       const alerta = s.fields?.Alerta_Urgencia || '⏳ SIN PLAZO'
 
       if (alerta.startsWith('🔴')) grupos.rojos.push(s)

@@ -139,9 +139,12 @@ export default function Dashboard() {
      MÉTRICAS PLAZOS
   ========================== */
 
+  // Filtrar alertas excluyendo casos cerrados
+  const alertasActivas = alertasPlazo.filter(a => a.fields?.Estado !== 'Cerrado')
+
   const resumenPlazos = { rojos: 0, naranjos: 0, amarillos: 0 }
 
-  alertasPlazo.forEach(a => {
+  alertasActivas.forEach(a => {
     const txt = a.fields?.Alerta_Urgencia || ''
     if (txt.startsWith('🔴')) resumenPlazos.rojos++
     else if (txt.startsWith('🟠')) resumenPlazos.naranjos++
@@ -152,7 +155,7 @@ export default function Dashboard() {
   const proximosAVencer = resumenPlazos.naranjos + resumenPlazos.amarillos
 
   // Top alertas para listado (orden por días)
-  const topAlertas = [...alertasPlazo]
+  const topAlertas = [...alertasActivas]
     .sort((a, b) => {
       const da = a.fields?.Dias_Restantes
       const db = b.fields?.Dias_Restantes
