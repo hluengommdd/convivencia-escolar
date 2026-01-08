@@ -76,7 +76,14 @@ export default function Dashboard() {
 
         setCasosActivos(activos)
         setCasosCerrados(cerrados)
-        setAlertasPlazo(plazos)
+        // Filtrar alertas: no mostrar alertas vinculadas a casos cerrados
+        const plazosFiltrados = (plazos || []).filter(a => {
+          const casoId = a.fields?.CASOS_ACTIVOS?.[0]
+          if (!casoId) return true
+          const caso = allCases.find(c => c.id === casoId)
+          return caso?.fields?.Estado !== 'Cerrado'
+        })
+        setAlertasPlazo(plazosFiltrados)
       } catch (e) {
         console.error(e)
         push({ type: 'error', title: 'Error al cargar dashboard', message: e?.message || 'Fallo de red' })

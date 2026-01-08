@@ -20,7 +20,15 @@ export default function AlertasPlazos() {
           getControlPlazos(),
           getCases()
         ])
-        setSeguimientos(controlData)
+        // Filtrar alertas: no mostrar alertas vinculadas a casos cerrados
+        const controlFiltrado = (controlData || []).filter(s => {
+          const casoId = s.fields?.CASOS_ACTIVOS?.[0]
+          if (!casoId) return true
+          const caso = casesData.find(c => c.id === casoId)
+          return caso?.fields?.Estado !== 'Cerrado'
+        })
+
+        setSeguimientos(controlFiltrado)
         setCasos(casesData)
       } catch (e) {
         console.error(e)
