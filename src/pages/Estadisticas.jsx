@@ -134,6 +134,7 @@ export default function Estadisticas() {
   const kpi = stats?.kpis ?? { casos_total: 0, abiertos: 0, cerrados: 0, promedio_cierre_dias: 0 }
   const plazos = stats?.plazos ?? { total_plazos: 0, fuera_plazo: 0, dentro_plazo: 0, cumplimiento_pct: 0 }
   const reincidencia = stats?.reincidencia ?? 0
+  const reincidentesList = stats?.reincidentes ?? []
   const mayorCarga = stats?.mayorCarga ?? { responsable: 'Sin responsable', total: 0 }
   const mayorNivel = stats?.mayorNivel ?? { level: 'Desconocido', total: 0 }
   const promedioSeguimientos = stats?.promedioSeguimientos ?? { promedio: 0 }
@@ -192,7 +193,7 @@ export default function Estadisticas() {
           cumplimientoPlazo={cumplimientoPlazo}
           fueraDePlazo={Array.from({ length: plazos.fuera_plazo || 0 })}
           seguimientosConPlazo={Array.from({ length: plazos.total_plazos || 0 })}
-          reincidencia={typeof reincidencia === 'number' ? Array.from({ length: reincidencia }, (_, i) => ({ estudiante: `Estudiante ${i + 1}`, total: 2 })) : []}
+          reincidencia={reincidentesList}
           cargaPorResponsable={cargaPorResponsable}
           tiempoPromedioEtapas={tiempoPromedioEtapas}
           dataTipo={dataTipo}

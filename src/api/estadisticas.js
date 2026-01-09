@@ -78,6 +78,34 @@ export async function loadEstadisticas({ desde, hasta }) {
     const plazos = pickSingle(plazosRes.data, EMPTY_STATS.plazos)
     const reincRow = pickSingle(reincRes.data, { estudiantes_reincidentes: 0 })
     const reincidencia = reincRow?.estudiantes_reincidentes ?? 0
+    // Obtener lista de estudiantes reincidentes (>=2 casos) dentro del rango
+    let reincidentesList = []
+    try {
+      const { data: casesInRange, error: casesErr } = await withRetry(() =>
+        supabase
+          .from('cases')
+          .select('student_id, students(first_name, last_name)')
+          .gte('incident_date', desde)
+          .lte('incident_date', hasta)
+      )
+
+      if (!casesErr && casesInRange && casesInRange.length) {
+        const counts = {}
+        casesInRange.forEach(r => {
+          const first = r.students?.first_name || ''
+          const last = r.students?.last_name || ''
+          const full = `${first} ${last}`.trim() || 'Sin nombre'
+          counts[full] = (counts[full] || 0) + 1
+        })
+
+        reincidentesList = Object.entries(counts)
+          .map(([estudiante, total]) => ({ estudiante, total }))
+          .filter(x => x.total >= 2)
+          .sort((a, b) => b.total - a.total)
+      }
+    } catch (e) {
+      console.warn('No se pudo obtener lista de reincidentes:', e)
+    }
     const mayorCarga = pickSingle(cargaRes.data, EMPTY_STATS.mayorCarga)
     const mayorNivel = pickSingle(mayorNivelRes.data, EMPTY_STATS.mayorNivel)
     const promedioSeguimientos = pickSingle(promSegRes.data, EMPTY_STATS.promedioSeguimientos)
@@ -89,6 +117,7 @@ export async function loadEstadisticas({ desde, hasta }) {
       kpis,
       plazos,
       reincidencia,
+      reincidentes: reincidentesList,
       mayorCarga,
       mayorNivel,
       promedioSeguimientos,
