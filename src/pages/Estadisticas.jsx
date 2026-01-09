@@ -346,6 +346,30 @@ export default function Estadisticas() {
 
       {/* GRÁFICOS (LOS TUYOS) */}
       <div className="grid grid-cols-2 gap-6">
+        {/* REINCIDENTES — lista de estudiantes con >=2 casos */}
+        {reincidentesList.length > 0 && (
+          <div className="card p-4 col-span-2">
+            <h3 className="font-semibold text-gray-900 mb-3">Estudiantes con Reincidencia</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-left text-xs text-gray-500">
+                  <tr>
+                    <th className="pb-2">Estudiante</th>
+                    <th className="pb-2 text-right">Casos</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reincidentesList.slice(0, 50).map((r, i) => (
+                    <tr key={i} className="border-t">
+                      <td className="py-2">{r.estudiante}</td>
+                      <td className="py-2 text-right font-semibold">{r.total}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
         <div className="card p-4">
           <h3>Casos por mes</h3>
           <ResponsiveContainer width="100%" height={250}>
