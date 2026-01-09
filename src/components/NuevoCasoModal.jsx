@@ -181,11 +181,12 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="w-full max-w-6xl relative space-y-4">
 
-        <div className="glass bg-white/80 rounded-xl p-6 shadow-xl relative">
+        {/* Usar `card` para mayor contraste en el modal */}
+        <div className="card relative">
 
         {guardando && (
-          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center rounded-xl z-10">
-            <div className="text-gray-700 font-medium">Guardando…</div>
+          <div className="absolute inset-0 bg-white/90 flex items-center justify-center rounded-xl z-10">
+            <div className="text-gray-900 font-medium">Guardando…</div>
           </div>
         )}
 
