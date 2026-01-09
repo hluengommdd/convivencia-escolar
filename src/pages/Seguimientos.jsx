@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { getCases } from '../api/db'
 import SeguimientoPage from './SeguimientoPage'
 import { formatDate } from '../utils/formatDate'
@@ -6,6 +7,7 @@ import { formatDate } from '../utils/formatDate'
 export default function Seguimientos() {
   const [casos, setCasos] = useState([])
   const [selectedCaso, setSelectedCaso] = useState(null)
+  const [searchParams] = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [refreshKey, setRefreshKey] = useState(0)
 
@@ -20,7 +22,22 @@ export default function Seguimientos() {
             c => c.fields?.Estado && c.fields.Estado !== 'Cerrado'
           )
 
-          setCasos(enSeguimiento)
+          // Si se pasó ?estudiante=Nombre, filtrar por ese estudiante
+          const estudianteParam = searchParams.get('estudiante')
+          let finalList = enSeguimiento
+          if (estudianteParam) {
+            const decoded = decodeURIComponent(estudianteParam)
+            finalList = enSeguimiento.filter(c => (
+              (c.fields?.Estudiante_Responsable || '').toLowerCase().includes(decoded.toLowerCase())
+            ))
+          }
+
+          setCasos(finalList)
+
+          // Si hay un estudiante filtrado, seleccionar el primer caso automáticamente
+          if (estudianteParam && finalList.length > 0) {
+            setSelectedCaso(finalList[0])
+          }
         } catch (e) {
           console.error(e)
         } finally {

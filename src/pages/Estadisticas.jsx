@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   LineChart,
   Line,
@@ -135,6 +136,7 @@ export default function Estadisticas() {
   const plazos = stats?.plazos ?? { total_plazos: 0, fuera_plazo: 0, dentro_plazo: 0, cumplimiento_pct: 0 }
   const reincidencia = stats?.reincidencia ?? 0
   const reincidentesList = stats?.reincidentes ?? []
+  const navigate = useNavigate()
   const mayorCarga = stats?.mayorCarga ?? { responsable: 'Sin responsable', total: 0 }
   const mayorNivel = stats?.mayorNivel ?? { level: 'Desconocido', total: 0 }
   const promedioSeguimientos = stats?.promedioSeguimientos ?? { promedio: 0 }
@@ -361,7 +363,14 @@ export default function Estadisticas() {
                 <tbody>
                   {reincidentesList.slice(0, 50).map((r, i) => (
                     <tr key={i} className="border-t">
-                      <td className="py-2">{r.estudiante}</td>
+                      <td className="py-2">
+                        <button
+                          onClick={() => navigate(`/seguimientos?estudiante=${encodeURIComponent(r.estudiante)}`)}
+                          className="text-left text-sm text-blue-600 hover:underline"
+                        >
+                          {r.estudiante}
+                        </button>
+                      </td>
                       <td className="py-2 text-right font-semibold">{r.total}</td>
                     </tr>
                   ))}
