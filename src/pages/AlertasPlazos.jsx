@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { getControlPlazos, getCases } from '../api/db'
+import { formatDate } from '../utils/formatDate'
 import { AlertTriangle, Clock, CheckCircle, FileText } from 'lucide-react'
 
 export default function AlertasPlazos() {
@@ -302,15 +303,20 @@ function Seccion({
                   </p>
                 </div>
                 
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${styles.badge} whitespace-nowrap`}>
-                  {typeof dias === 'number'
-                    ? dias < 0
-                      ? `Vencido ${Math.abs(dias)}d`
-                      : dias === 0
-                      ? 'Vence hoy'
-                      : `${dias} días`
-                    : 'Sin plazo'}
-                </span>
+                <div className="flex flex-col items-end">
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${styles.badge} whitespace-nowrap`}>
+                    {typeof dias === 'number'
+                      ? dias < 0
+                        ? `Vencido ${Math.abs(dias)}d`
+                        : dias === 0
+                        ? 'Vence hoy'
+                        : `${dias} días`
+                      : 'Sin plazo'}
+                  </span>
+                  {s.fields?.Fecha_Plazo && (
+                    <span className="text-xs text-gray-500 mt-1">{formatDate(s.fields?.Fecha_Plazo)}</span>
+                  )}
+                </div>
               </div>
 
               {s.fields?.Detalle && (
@@ -324,7 +330,7 @@ function Seccion({
                   {s.fields?.Tipo_Accion || 'Sin tipo'}
                 </span>
                 <span className="text-xs text-gray-400">
-                  {s.fields?.Fecha || '—'}
+                  {s.fields?.Fecha_Plazo ? formatDate(s.fields?.Fecha_Plazo) : (s.fields?.Fecha || '—')}
                 </span>
               </div>
             </div>
