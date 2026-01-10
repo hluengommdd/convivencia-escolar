@@ -104,6 +104,42 @@ export default function SeguimientoItem({ seg, readOnly = false }) {
           {seg.fields?.Responsable || '—'}
         </p>
 
+        {/* Plazo / Fecha_Plazo */}
+        {(() => {
+          const fechaPlazo = seg.fields?.Fecha_Plazo || null
+          if (!fechaPlazo) return (
+            <p className="text-sm text-gray-500 mt-2"><strong>Plazo:</strong> Sin plazo</p>
+          )
+
+          const due = new Date(fechaPlazo + 'T00:00:00')
+          const today = new Date()
+          today.setHours(0,0,0,0)
+          const msDay = 24 * 60 * 60 * 1000
+          const diff = Math.ceil((due - today) / msDay)
+
+          let badgeText = ''
+          let badgeClass = 'bg-gray-100 text-gray-700'
+          if (diff < 0) {
+            badgeText = `Vencido ${Math.abs(diff)} día${Math.abs(diff) === 1 ? '' : 's'}`
+            badgeClass = 'bg-red-100 text-red-800'
+          } else if (diff === 0) {
+            badgeText = 'Vence hoy'
+            badgeClass = 'bg-yellow-100 text-yellow-800'
+          } else {
+            badgeText = `En ${diff} día${diff === 1 ? '' : 's'}`
+            badgeClass = 'bg-green-100 text-green-800'
+          }
+
+          return (
+            <p className="text-sm text-gray-600 mt-2">
+              <strong>Plazo:</strong> {formatDate(fechaPlazo)}{' '}
+              <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ml-2 ${badgeClass}`}>
+                {badgeText}
+              </span>
+            </p>
+          )
+        })()}
+
         {seg.fields?.Detalle && (
           <p className="text-sm text-gray-700 mt-2 break-words whitespace-pre-wrap">
             {seg.fields.Detalle}
