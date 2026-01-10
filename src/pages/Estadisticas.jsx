@@ -236,9 +236,12 @@ export default function Estadisticas() {
       </div>
 
       {/* FILTROS */}
-      <div className="card">
-        <h2 className="font-semibold text-gray-900 mb-4">Filtros</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-gray-900">Filtros</h2>
+          <button className="px-2 py-1 text-sm border rounded hover:bg-gray-50">Aplicar</button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Año
@@ -276,7 +279,7 @@ export default function Estadisticas() {
       </div>
 
       {/* KPI OPERATIVOS */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         {(() => {
           const kpiItems = [
             { label: 'Casos', value: kpi.casos_total },
@@ -288,7 +291,7 @@ export default function Estadisticas() {
           const palette = Object.values(TIPOS_COLORS)
 
           return kpiItems.map((item, idx) => (
-            <div key={item.label} className="card p-4 flex">
+            <div key={item.label} className="bg-white rounded-xl shadow-sm p-4 flex">
               <div className="w-1.5 rounded-l" style={{ background: palette[idx % palette.length] }} />
               <div className="flex-1 pl-3">
                 <p className="text-xs">{item.label}</p>
@@ -300,8 +303,8 @@ export default function Estadisticas() {
       </div>
 
       {/* KPI DIRECTIVOS */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="card p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl shadow-sm p-4">
           <p className="text-xs">Cumplimiento de plazos</p>
           <p className="text-2xl font-bold">{cumplimientoPlazo}%</p>
           <p className="text-xs text-gray-500">
@@ -309,7 +312,7 @@ export default function Estadisticas() {
           </p>
         </div>
 
-        <div className="card p-4">
+        <div className="bg-white rounded-xl shadow-sm p-4">
           <p className="text-xs">Reincidencia</p>
           <p className="text-2xl font-bold">{reincidencia}</p>
           <p className="text-xs text-gray-500">
@@ -347,10 +350,10 @@ export default function Estadisticas() {
       </div>
 
       {/* GRÁFICOS (LOS TUYOS) */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* REINCIDENTES — lista de estudiantes con >=2 casos */}
         {reincidentesList.length > 0 && (
-          <div className="card p-4 col-span-2">
+          <div className="bg-white rounded-xl shadow-sm p-4 col-span-2">
             <h3 className="font-semibold text-gray-900 mb-3">Estudiantes con Reincidencia</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -379,7 +382,7 @@ export default function Estadisticas() {
             </div>
           </div>
         )}
-        <div className="card p-4">
+        <div className="bg-white rounded-xl shadow-sm p-4">
           <h3>Casos por mes</h3>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={dataMeses}>
@@ -391,7 +394,7 @@ export default function Estadisticas() {
           </ResponsiveContainer>
         </div>
 
-        <div className="card p-4">
+        <div className="bg-white rounded-xl shadow-sm p-4">
           <h3>Casos por tipificación</h3>
           <div className="flex items-center gap-3 text-sm text-gray-600 mb-3">
             {/* Legend using the same color mapping */}
@@ -424,7 +427,7 @@ export default function Estadisticas() {
           </ResponsiveContainer>
         </div>
 
-        <div className="card p-4 col-span-2">
+        <div className="bg-white rounded-xl shadow-sm p-4 col-span-2">
           <h3>Casos por curso</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={dataCursos}>
@@ -457,18 +460,18 @@ function EstadisticasSkeleton() {
       </div>
       <div className="bg-white border rounded-xl p-6 space-y-3">
         <div className="h-5 w-32 bg-gray-200 rounded" />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => (
             <div key={i} className="h-10 bg-gray-200 rounded" />
           ))}
         </div>
       </div>
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map(i => (
           <div key={i} className="h-20 bg-gray-200 rounded" />
         ))}
       </div>
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="h-64 bg-gray-200 rounded" />
         <div className="h-64 bg-gray-200 rounded" />
       </div>

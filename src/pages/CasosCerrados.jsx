@@ -49,20 +49,20 @@ export default function CasosCerrados() {
 
   return (
     <div className="h-full">
-      <div className="flex gap-6 h-full">
+      <div className="flex flex-col sm:flex-row gap-6 h-full">
         {/* LISTA IZQUIERDA */}
-        <div className="w-1/2 bg-white border rounded-xl overflow-hidden flex flex-col">
+        <div className="w-full sm:w-1/2 bg-white border rounded-xl overflow-hidden flex flex-col">
           <div className="px-4 py-3 border-b">
             <h2 className="text-lg font-semibold">Casos Cerrados</h2>
           </div>
 
-          {/* ENCABEZADO */}
-          <div className="grid grid-cols-12 gap-2 px-4 py-2 text-xs font-semibold text-gray-500 border-b">
-            <div className="col-span-1">#</div>
-            <div className="col-span-3">Fecha</div>
-            <div className="col-span-4">Estudiante</div>
-            <div className="col-span-2">Tipificación</div>
-            <div className="col-span-2">Estado</div>
+          {/* ENCABEZADO (oculto en móvil) */}
+          <div className="hidden sm:grid grid-cols-12 gap-2 px-4 py-2 text-xs font-semibold text-gray-500 border-b">
+            <div className="sm:col-span-1">#</div>
+            <div className="sm:col-span-3">Fecha</div>
+            <div className="sm:col-span-4">Estudiante</div>
+            <div className="sm:col-span-2">Tipificación</div>
+            <div className="sm:col-span-2">Estado</div>
           </div>
 
           {/* LISTA */}
@@ -75,19 +75,19 @@ export default function CasosCerrados() {
               <div
                 key={caso.id}
                 onClick={() => setSelectedCaso(caso)}
-                className={`grid grid-cols-12 gap-2 px-4 py-3 text-sm border-b cursor-pointer hover:bg-gray-50
+                className={`grid grid-cols-1 sm:grid-cols-12 gap-2 px-4 py-3 text-sm border-b cursor-pointer hover:bg-gray-50
                   ${selectedCaso?.id === caso.id ? 'bg-gray-100 border-l-4 border-gray-400' : ''}`}
               >
-                <div className="col-span-1 text-gray-400">{index + 1}</div>
+                <div className="sm:col-span-1 text-gray-400">{index + 1}</div>
 
-                <div className="col-span-3">
+                <div className="sm:col-span-3">
                   <p className="font-medium">{formatDate(caso.fields.Fecha_Incidente)}</p>
                   <p className="text-xs text-gray-400">{caso.fields.Hora_Incidente}</p>
                 </div>
 
-                <div className="col-span-4 font-semibold truncate">{caso.fields.Estudiante_Responsable}</div>
+                <div className="sm:col-span-4 font-semibold truncate">{caso.fields.Estudiante_Responsable}</div>
 
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium
                     ${caso.fields.Tipificacion_Conducta === 'Leve'
                       ? 'bg-green-100 text-green-800'
@@ -103,7 +103,7 @@ export default function CasosCerrados() {
                   </span>
                 </div>
 
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <span className="px-2 py-1 rounded-full text-xs bg-gray-200 text-gray-700">Cerrado</span>
                 </div>
               </div>

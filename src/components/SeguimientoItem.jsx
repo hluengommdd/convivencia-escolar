@@ -77,14 +77,14 @@ export default function SeguimientoItem({ seg, readOnly = false }) {
   const tipoColor = TIPOS_COLORS[tipo] || '#3b82f6'
 
   return (
-    <div className="relative pl-6">
+    <div id={`seg-${seg.id}`} className="relative pl-6">
       {/* Línea vertical */}
       <div className="absolute left-2 top-0 h-full w-px" style={{ backgroundColor: tipoColor, opacity: 0.12 }} />
 
       {/* Punto */}
       <div className="absolute left-1.5 top-2 w-3 h-3 rounded-full" style={{ backgroundColor: tipoColor }} />
 
-      <div className="card">
+      <div className="bg-white rounded-xl shadow-sm p-4">
         <div className="flex justify-between items-start">
           <p className="text-base font-bold text-gray-900">
             {seg.fields?.Tipo_Accion}

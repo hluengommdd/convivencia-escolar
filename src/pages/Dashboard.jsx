@@ -224,6 +224,7 @@ export default function Dashboard() {
           subtitle="Muy graves y gravísimos activos"
           icon={<AlertTriangle className="text-white" size={20} />}
           color="bg-red-600"
+          onClick={() => navigate('/casos-activos?tip=Muy%20Grave')}
         />
 
         <StatCard
@@ -232,6 +233,7 @@ export default function Dashboard() {
           subtitle="Investigaciones vencidas"
           icon={<Timer className="text-white" size={20} />}
           color="bg-rose-700"
+          onClick={() => navigate('/alertas?filter=vencidos')}
         />
 
         <StatCard
@@ -240,6 +242,7 @@ export default function Dashboard() {
           subtitle="≤ 7 días"
           icon={<Clock className="text-white" size={20} />}
           color="bg-orange-500"
+          onClick={() => navigate('/alertas?filter=proximos')}
         />
       </div>
 
@@ -251,6 +254,7 @@ export default function Dashboard() {
           subtitle="Investigación o seguimiento"
           icon={<Activity className="text-white" size={20} />}
           color="bg-amber-500"
+          onClick={() => navigate('/casos-activos')}
         />
 
         <StatCard
@@ -259,6 +263,7 @@ export default function Dashboard() {
           subtitle={`${totalCerrados} de ${totalCasos} cerrados`}
           icon={<CheckCircle className="text-white" size={20} />}
           color="bg-green-600"
+          onClick={() => navigate('/casos-cerrados')}
         />
 
         <StatCard
@@ -267,13 +272,19 @@ export default function Dashboard() {
           subtitle="Incidentes del día"
           icon={<Clock className="text-white" size={20} />}
           color="bg-blue-600"
+          onClick={() => navigate('/casos-activos?created=today')}
         />
       </div>
 
       {/* GRÁFICOS */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="card">
-          <h3 className="font-semibold text-gray-900 mb-4">Casos activos por tipificación</h3>
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-gray-900">Casos activos por tipificación</h3>
+            <div className="flex items-center gap-2">
+              <button onClick={() => {}} className="px-2 py-1 text-sm border rounded hover:bg-gray-50">Refrescar</button>
+            </div>
+          </div>
 
           {dataTipo.length === 0 ? (
             <p className="text-sm text-gray-500">Sin datos para graficar.</p>
@@ -303,8 +314,13 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="card">
-          <h3 className="font-semibold text-gray-900 mb-4">Estado de plazos (Control de Plazos)</h3>
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-gray-900">Estado de plazos (Control de Plazos)</h3>
+            <div className="flex items-center gap-2">
+              <button onClick={() => {}} className="px-2 py-1 text-sm border rounded hover:bg-gray-50">Refrescar</button>
+            </div>
+          </div>
 
           {dataPlazos.every(x => x.value === 0) ? (
             <p className="text-sm text-gray-500">No hay alertas para graficar.</p>
@@ -333,8 +349,13 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="card">
-          <h3 className="font-semibold text-gray-900 mb-4">Casos activos por curso (Top 10)</h3>
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-gray-900">Casos activos por curso (Top 10)</h3>
+            <div className="flex items-center gap-2">
+              <button onClick={() => {}} className="px-2 py-1 text-sm border rounded hover:bg-gray-50">Refrescar</button>
+            </div>
+          </div>
 
           {dataCurso.length === 0 ? (
             <p className="text-sm text-gray-500">Sin datos para graficar.</p>
@@ -355,11 +376,16 @@ export default function Dashboard() {
       {/* BLOQUES OPERATIVOS */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* CASOS URGENTES */}
-        <div className="xl:col-span-2 card">
-          <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <AlertTriangle size={18} className="text-red-600" />
-            Casos que requieren atención inmediata
-          </h2>
+        <div className="xl:col-span-2 bg-white rounded-xl shadow-sm p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+              <AlertTriangle size={18} className="text-red-600" />
+              Casos que requieren atención inmediata
+            </h2>
+            <div className="flex items-center gap-2">
+              <button onClick={() => {}} className="px-3 py-1 text-sm border rounded hover:bg-gray-50">Ver todos</button>
+            </div>
+          </div>
 
           {casosUrgentes.length === 0 ? (
             <div className="flex items-start gap-3 p-4 rounded-lg bg-green-50 border border-green-200">
@@ -387,8 +413,13 @@ export default function Dashboard() {
         </div>
 
         {/* ALERTAS DE PLAZOS (clic → Seguimiento) */}
-        <div className="card">
-          <h2 className="font-semibold text-gray-900 mb-4">Alertas de Plazos</h2>
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-gray-900">Alertas de Plazos</h2>
+            <div className="flex items-center gap-2">
+              <button onClick={() => {}} className="px-2 py-1 text-sm border rounded hover:bg-gray-50">Refrescar</button>
+            </div>
+          </div>
 
           {topAlertas.length === 0 ? (
             <div className="p-4 rounded-lg bg-gray-50 border text-sm text-gray-600">

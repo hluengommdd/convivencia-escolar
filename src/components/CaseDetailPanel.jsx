@@ -1,7 +1,10 @@
 import { Clock, Edit2, Save, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { updateCase } from '../api/db'
+import { getInvolucrados } from '../api/db'
 import { useState } from 'react'
+import { useEffect } from 'react'
+import InvolucradosListPlaceholder from './InvolucradosListPlaceholder'
 
 export default function CaseDetailPanel({ caso }) {
   const navigate = useNavigate()
@@ -50,7 +53,7 @@ export default function CaseDetailPanel({ caso }) {
   }
 
   return (
-    <div className="card h-full flex flex-col">
+    <div className="bg-white rounded-xl shadow-sm h-full flex flex-col">
       {/* HEADER */}
       <div
         className={`px-6 py-4 border-b ${
@@ -99,7 +102,7 @@ export default function CaseDetailPanel({ caso }) {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <div>
             <h3 className="text-sm font-semibold text-gray-500 mb-1">
               Tipo de falta
@@ -172,6 +175,12 @@ export default function CaseDetailPanel({ caso }) {
           <span>{caso.fields.Fecha_Incidente}</span>
           <span className="mx-2">·</span>
           <span>{caso.fields.Hora_Incidente}</span>
+        </div>
+
+        {/* INVOLUCRADOS / ANTECEDENTES */}
+        <div className="mt-6">
+          <h3 className="text-sm font-semibold text-gray-500 mb-2">Involucrados</h3>
+          <InvolucradosListPlaceholder casoId={caso.id} />
         </div>
       </div>
 

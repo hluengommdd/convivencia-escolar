@@ -44,9 +44,9 @@ export default function CasosActivos() {
 
   return (
     <div className="h-full">
-      <div className="flex gap-6 h-full">
+      <div className="flex flex-col sm:flex-row gap-6 h-full">
         {/* LISTA IZQUIERDA */}
-        <div className="w-1/2 bg-white border rounded-xl overflow-hidden flex flex-col">
+        <div className="w-full sm:w-1/2 bg-white border rounded-xl overflow-hidden flex flex-col">
           <div className="px-4 py-3 border-b flex items-center justify-between">
             <h2 className="text-lg font-semibold">
               Casos Activos
@@ -61,12 +61,12 @@ export default function CasosActivos() {
           </div>
 
           {/* ENCABEZADO */}
-          <div className="grid grid-cols-12 gap-2 px-4 py-2 text-xs font-semibold text-gray-500 border-b">
-            <div className="col-span-1">#</div>
-            <div className="col-span-3">Fecha</div>
-            <div className="col-span-4">Estudiante</div>
-            <div className="col-span-2">Tipificación</div>
-            <div className="col-span-2">Estado</div>
+          <div className="hidden sm:grid grid-cols-12 gap-2 px-4 py-2 text-xs font-semibold text-gray-500 border-b">
+            <div className="sm:col-span-1">#</div>
+            <div className="sm:col-span-3">Fecha</div>
+            <div className="sm:col-span-4">Estudiante</div>
+            <div className="sm:col-span-2">Tipificación</div>
+            <div className="sm:col-span-2">Estado</div>
           </div>
 
           {/* LISTA */}
@@ -82,18 +82,18 @@ export default function CasosActivos() {
                 <div
                   key={caso.id}
                   onClick={() => setSelectedCaso(caso)}
-                  className={`grid grid-cols-12 gap-2 px-4 py-3 text-sm border-b cursor-pointer hover:bg-gray-50
-                    ${
-                      selectedCaso?.id === caso.id
-                        ? 'bg-blue-50 border-l-4 border-blue-500'
-                        : ''
-                    }`}
+                  className={`grid grid-cols-1 sm:grid-cols-12 gap-2 px-4 py-3 text-sm border-b cursor-pointer hover:bg-gray-50
+                      ${
+                        selectedCaso?.id === caso.id
+                          ? 'bg-blue-50 border-l-4 border-blue-500'
+                          : ''
+                      }`}
                 >
-                  <div className="col-span-1 text-gray-400">
+                    <div className="sm:col-span-1 text-gray-400">
                     {index + 1}
                   </div>
 
-                  <div className="col-span-3">
+                    <div className="sm:col-span-3">
                     <p className="font-medium">
                      {formatDate(caso.fields.Fecha_Incidente)}
                   </p>
@@ -102,11 +102,11 @@ export default function CasosActivos() {
                     </p>
                   </div>
 
-                  <div className="col-span-4 font-semibold truncate">
+                    <div className="sm:col-span-4 font-semibold truncate">
                     {caso.fields.Estudiante_Responsable}
                   </div>
 
-                  <div className="col-span-2">
+                    <div className="sm:col-span-2">
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium
                         ${

@@ -83,7 +83,7 @@ export default function SeguimientoForm({ casoId, onSaved }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card space-y-3">
+    <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-4 space-y-3">
       <select
         value={tipoAccion}
         onChange={e => setTipoAccion(e.target.value)}
