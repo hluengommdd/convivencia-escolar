@@ -25,6 +25,7 @@ import { Bar } from 'recharts/es6/cartesian/Bar'
 import StatCard from '../components/StatCard'
 import UrgentCaseCard from '../components/UrgentCaseCard'
 import { getCases, getControlPlazos } from '../api/db'
+import { formatDate } from '../utils/formatDate'
 import { onDataUpdated } from '../utils/refreshBus'
 import { useToast } from '../hooks/useToast'
 
@@ -479,6 +480,9 @@ export default function Dashboard() {
                           {typeof a.fields?.Dias_Restantes === 'number'
                             ? `${a.fields.Dias_Restantes} días`
                             : '—'}
+                          <div className="text-[11px] text-gray-400">
+                            {a.fields?.Fecha_Plazo ? formatDate(a.fields.Fecha_Plazo) : ''}
+                          </div>
                         </div>
                       </div>
                     </div>
