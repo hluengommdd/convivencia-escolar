@@ -97,7 +97,7 @@ export default function AlertasPlazos() {
       </div>
 
       {/* RESUMEN CON CARDS MEJORADAS */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <CardResumen 
           icon={<AlertTriangle className="text-red-600" size={24} />}
           label="Vencidos"

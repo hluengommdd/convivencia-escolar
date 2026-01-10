@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createCase } from '../api/db'
+import { createCase, addInvolucrado } from '../api/db'
 import { supabase } from '../api/supabaseClient'
 import { useToast } from '../hooks/useToast'
 
@@ -70,11 +70,19 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
   const [cursos, setCursos] = useState([])
   const [estudiantes, setEstudiantes] = useState([])
   const [estudianteId, setEstudianteId] = useState('')
+  const [rolEstudiante, setRolEstudiante] = useState('')
   const [tipo, setTipo] = useState('')
   const [conductas, setConductas] = useState([])
   const [descripcionLibre, setDescripcionLibre] = useState('')
-  const [estado, setEstado] = useState('Activo')
+  // Estado se fija por defecto a 'Reportado' y no se muestra el selector
+  const [estado, setEstado] = useState('Reportado')
   const [guardando, setGuardando] = useState(false)
+  const [involucradosTemp, setInvolucradosTemp] = useState([])
+  const [nombreInv, setNombreInv] = useState('')
+  const [rolInv, setRolInv] = useState('')
+  const [cursoInv, setCursoInv] = useState('')
+  const [estudiantesInv, setEstudiantesInv] = useState([])
+  const [selectedEstInv, setSelectedEstInv] = useState('')
   const { push } = useToast()
 
   /* ================= CARGA CURSOS ================= */
@@ -129,6 +137,49 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
     cargarEstudiantes()
   }, [curso])
 
+  // Cuando se selecciona un estudiante, autocompletar el campo de involucrados
+  useEffect(() => {
+    if (!estudianteId) return
+    const sel = estudiantes.find(s => s.id === estudianteId)
+    if (sel) {
+      const nombreSel = `${sel.first_name} ${sel.last_name}`.trim()
+      setNombreInv(nombreSel)
+    }
+  }, [estudianteId, estudiantes])
+
+  // Limpiar nombreInv cuando cambia el curso
+  useEffect(() => {
+    setNombreInv('')
+    setEstudianteId('')
+    setRolEstudiante('')
+  }, [curso])
+
+  // cargar estudiantes para la sección Involucrados por curso seleccionado
+  useEffect(() => {
+    let mounted = true
+    async function load() {
+      if (!cursoInv) {
+        setEstudiantesInv([])
+        setSelectedEstInv('')
+        return
+      }
+      try {
+        const { data, error } = await supabase
+          .from('students')
+          .select('id, first_name, last_name, course')
+          .eq('course', cursoInv)
+          .order('last_name')
+
+        if (error) throw error
+        if (mounted) setEstudiantesInv(data || [])
+      } catch (e) {
+        console.error('Error cargando estudiantes (involucrados):', e)
+      }
+    }
+    load()
+    return () => { mounted = false }
+  }, [cursoInv])
+
   function toggleConducta(texto) {
     setConductas(prev =>
       prev.includes(texto)
@@ -162,7 +213,21 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
       
       console.log('📝 Guardando caso con datos:', casoData)
       
-      await createCase(casoData)
+      const nuevoCaso = await createCase(casoData)
+
+      // Si hay involucrados temporales, guardarlos vinculados al nuevo caso
+      if (involucradosTemp.length > 0) {
+        try {
+          await Promise.all(
+            involucradosTemp.map(inv =>
+              addInvolucrado({ caso_id: nuevoCaso.id, nombre: inv.nombre, rol: inv.rol, metadata: { curso: inv.curso } })
+            )
+          )
+        } catch (e) {
+          console.error('Error guardando involucrados:', e)
+          push({ type: 'warning', title: 'Involucrados', message: 'No se pudieron guardar todos los involucrados' })
+        }
+      }
 
       push({ type: 'success', title: 'Caso creado', message: 'El caso se guardó exitosamente' })
       alert('Caso creado correctamente')
@@ -179,13 +244,13 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-6xl relative space-y-4">
+      <div className="w-full max-w-3xl sm:max-w-4xl lg:max-w-6xl relative space-y-4">
 
-        {/* Usar `card` para mayor contraste en el modal */}
-        <div className="card relative">
+        {/* Usar tarjeta consistente para el modal */}
+        <div className="bg-white rounded-xl shadow-sm p-6 relative">
 
         {guardando && (
-          <div className="absolute inset-0 bg-white/90 flex items-center justify-center rounded-xl z-10">
+            <div className="absolute inset-0 bg-white/90 flex items-center justify-center rounded-xl z-10">
             <div className="text-gray-900 font-medium">Guardando…</div>
           </div>
         )}
@@ -202,40 +267,47 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
         <h2 className="text-xl font-semibold">Nuevo Caso</h2>
 
         {/* FECHA / HORA */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="border rounded p-2" />
           <input type="time" value={hora} onChange={e => setHora(e.target.value)} className="border rounded p-2" />
         </div>
 
-        {/* CURSO */}
-        <select
-          value={curso}
-          onChange={e => setCurso(e.target.value)}
-          className="w-full border rounded p-2"
-        >
-          <option value="">Selecciona un curso</option>
-          {cursos.map(c => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+        {/* PRIMERA LINEA: fecha/hora (arriba) */}
 
-        {/* ESTUDIANTE */}
-        {curso && (
+        {/* SEGUNDA LINEA: Curso - Nombre (estudiante principal) - Rol */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <select
+            value={curso}
+            onChange={e => setCurso(e.target.value)}
+            className="w-full border rounded p-3"
+          >
+            <option value="">Selecciona un curso</option>
+            {cursos.map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+
           <select
             value={estudianteId}
             onChange={e => setEstudianteId(e.target.value)}
-            className="w-full border rounded p-2"
+            className="w-full border rounded p-3"
           >
             <option value="">Selecciona un estudiante</option>
             {estudiantes.map(est => (
-              <option key={est.id} value={est.id}>
-                {est.first_name} {est.last_name}
-              </option>
+              <option key={est.id} value={est.id}>{est.first_name} {est.last_name}</option>
             ))}
           </select>
-        )}
 
-        {/* TIPIFICACIÓN */}
+          <select value={rolEstudiante} onChange={e => setRolEstudiante(e.target.value)} className="w-full border rounded p-3">
+            <option value="">Selecciona rol</option>
+            <option value="Afectado">Afectado</option>
+            <option value="Agresor">Agresor</option>
+            <option value="Testigo">Testigo</option>
+            <option value="Denunciante">Denunciante</option>
+          </select>
+        </div>
+
+        {/* TERCERA LINEA: TIPIFICACIÓN */}
         <div>
           <label className="block text-sm font-semibold mb-2">
             Tipo de falta
@@ -263,7 +335,7 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
 
         {/* CONDUCTAS */}
         {tipo && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {TIPIFICACIONES[tipo].map(texto => (
               <div
                 key={texto}
@@ -289,16 +361,70 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
           onChange={e => setDescripcionLibre(e.target.value)}
         />
 
-        {/* ESTADO */}
-        <select
-          value={estado}
-          onChange={e => setEstado(e.target.value)}
-          className="w-full border rounded p-2"
-        >
-          <option>Reportado</option>
-          <option>En Investigación</option>
-          <option>En Seguimiento</option>
-        </select>
+        {/* NOTE: el selector de Estado se removió; el caso se marca como 'Reportado' por defecto */}
+
+        {/* INVOLUCRADOS TEMPORALES (solo en el modal hasta guardar) */}
+          <div className="mt-4">
+          <h3 className="text-sm font-semibold mb-2">Involucrados (opcional)</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 items-end">
+            <select value={cursoInv} onChange={e => setCursoInv(e.target.value)} className="border p-3 rounded">
+              <option value="">Selecciona curso</option>
+              {cursos.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+
+            <select value={selectedEstInv} onChange={e => { setSelectedEstInv(e.target.value); const s = estudiantesInv.find(x=>x.id===e.target.value); setNombreInv(s ? `${s.first_name} ${s.last_name}` : '') }} className="border p-3 rounded">
+              <option value="">Selecciona estudiante</option>
+              {estudiantesInv.map(s => (
+                <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>
+              ))}
+            </select>
+
+            <select value={rolInv} onChange={e => setRolInv(e.target.value)} className="border p-3 rounded">
+              <option value="">Selecciona rol</option>
+              <option value="Afectado">Afectado</option>
+              <option value="Agresor">Agresor</option>
+              <option value="Testigo">Testigo</option>
+              <option value="Denunciante">Denunciante</option>
+            </select>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button type="button" onClick={() => { setNombreInv(''); setRolInv(''); setSelectedEstInv(''); setCursoInv('') }} className="px-3 py-2 border rounded w-full sm:w-auto">Limpiar</button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!nombreInv.trim() || !rolInv) {
+                    push({ type: 'error', title: 'Involucrados', message: 'Nombre y rol son requeridos' })
+                    return
+                  }
+                  setInvolucradosTemp(prev => [...prev, { nombre: nombreInv.trim(), rol: rolInv, curso: cursoInv || null }])
+                  setNombreInv('')
+                  setRolInv('')
+                  setSelectedEstInv('')
+                }}
+                className="px-3 py-2 bg-blue-600 text-white rounded w-full sm:w-auto"
+              >
+                Agregar
+              </button>
+            </div>
+          </div>
+
+          {involucradosTemp.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {involucradosTemp.map((it, i) => (
+                <div key={i} className="flex items-center justify-between gap-2 p-2 border rounded">
+                  <div>
+                    <div className="font-medium">{it.nombre}</div>
+                    <div className="text-xs text-gray-600">{it.rol}</div>
+                  </div>
+                  <div>
+                    <button onClick={() => setInvolucradosTemp(prev => prev.filter((_, idx) => idx !== i))} className="text-sm text-red-600">Eliminar</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Nota: rol del estudiante principal ya se selecciona en la segunda línea */}
 
         {/* ACCIONES */}
         <div className="flex justify-end gap-2 pt-4">

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Sidebar from './Sidebar'
+import { Menu } from 'lucide-react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { checkSupabaseHealth } from '../api/health'
 import { useToast } from '../hooks/useToast'
@@ -10,6 +11,8 @@ export default function Layout() {
   const [sbOk, setSbOk] = useState(true)
   const sbStatusRef = useRef(true)
   const { push } = useToast()
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 640 : false)
 
   // 🔹 Título dinámico según ruta
   function getTitle() {
@@ -58,6 +61,21 @@ export default function Layout() {
     }
   }, [push])
 
+  // Detect viewport changes to handle mobile sidebar visibility
+  useEffect(() => {
+    function onResize() {
+      const mobileNow = window.innerWidth < 640
+      setIsMobile(mobileNow)
+      // close mobile overlay when switching to desktop
+      if (!mobileNow) setMobileSidebarOpen(false)
+    }
+
+    window.addEventListener('resize', onResize)
+    // run once
+    onResize()
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
   return (
     <div className="flex h-screen overflow-hidden">
       {/* SIDEBAR */}
@@ -66,7 +84,14 @@ export default function Layout() {
       {/* CONTENIDO */}
       <main className="flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
         {/* HEADER SUPERIOR */}
-        <div className="glass flex justify-between items-center p-6 pb-4 shrink-0 border-b border-gray-200/40">
+        <div className="glass flex justify-between items-center p-4 sm:p-6 pb-4 shrink-0 border-b border-gray-200/40">
+          <button
+            className="inline-flex items-center justify-center p-2 rounded-md hover:bg-gray-100 sm:hidden"
+            onClick={() => setMobileSidebarOpen(true)}
+            aria-label="Abrir menú"
+          >
+            <Menu size={20} />
+          </button>
           <h1 className="text-2xl font-semibold text-gray-800 tracking-tight">
             {getTitle()}
           </h1>
@@ -94,10 +119,14 @@ export default function Layout() {
         </div>
 
         {/* 👇 AQUÍ SE RENDERIZAN LAS PÁGINAS */}
-        <div className="flex-1 overflow-y-auto px-8 pb-8">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-8 pb-8">
           <Outlet />
         </div>
       </main>
+      {/* Mobile sidebar overlay (render only on mobile) */}
+      {isMobile && (
+        <Sidebar mobileOpen={mobileSidebarOpen} onClose={() => setMobileSidebarOpen(false)} />
+      )}
     </div>
   )
 }

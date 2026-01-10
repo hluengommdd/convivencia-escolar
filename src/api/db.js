@@ -374,3 +374,66 @@ function calcularAlerta(diasRestantes) {
     return `✅ EN PLAZO (${diasRestantes} días)`
   }
 }
+
+/** INVOLUCRADOS: CRUD helpers */
+export async function getInvolucrados(casoId) {
+  try {
+    if (!casoId) return []
+    const { data, error } = await withRetry(() =>
+      supabase.from('involucrados').select('*').eq('caso_id', casoId).order('created_at', { ascending: true })
+    )
+    if (error) {
+      console.error('Error fetching involucrados:', error)
+      return []
+    }
+    return data || []
+  } catch (e) {
+    console.error('Error in getInvolucrados:', e)
+    return []
+  }
+}
+
+export async function addInvolucrado(payload) {
+  try {
+    // ensure metadata is jsonb
+    const toInsert = { ...payload }
+    if (toInsert.metadata && typeof toInsert.metadata !== 'object') {
+      try { toInsert.metadata = JSON.parse(toInsert.metadata) } catch (e) { /* leave as-is */ }
+    }
+
+    const { data, error } = await withRetry(() =>
+      supabase.from('involucrados').insert([toInsert]).select().single()
+    )
+    if (error) throw error
+    return data
+  } catch (e) {
+    console.error('Error creating involucrado:', e)
+    throw e
+  }
+}
+
+export async function updateInvolucrado(id, patch) {
+  try {
+    const { data, error } = await withRetry(() =>
+      supabase.from('involucrados').update(patch).eq('id', id).select().single()
+    )
+    if (error) throw error
+    return data
+  } catch (e) {
+    console.error('Error updating involucrado:', e)
+    throw e
+  }
+}
+
+export async function deleteInvolucrado(id) {
+  try {
+    const { data, error } = await withRetry(() =>
+      supabase.from('involucrados').delete().eq('id', id).select().single()
+    )
+    if (error) throw error
+    return data
+  } catch (e) {
+    console.error('Error deleting involucrado:', e)
+    throw e
+  }
+}

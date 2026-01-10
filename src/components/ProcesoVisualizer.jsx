@@ -11,7 +11,7 @@ const ETAPAS_PROCESO = [
   { numero: 8, nombre: '8. Seguimiento', corto: 'Seguimiento', plazoMaxDias: null },
 ]
 
-export default function ProcesoVisualizer({ seguimientos = [], compact = false, fechaInicio = null }) {
+export default function ProcesoVisualizer({ seguimientos = [], compact = false, fechaInicio = null, onSelectStep = null }) {
   // Obtener etapas completadas desde los seguimientos
   const etapasCompletadas = new Set()
   const etapasConSeguimiento = new Map()
@@ -154,7 +154,44 @@ export default function ProcesoVisualizer({ seguimientos = [], compact = false, 
   }
 
   return (
-    <div className="card space-y-6">
+    <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
+      {/* STEPper horizontal compacto visible en pantallas md+ */}
+      <div className="hidden md:block">
+        <div className="flex items-center gap-4 overflow-x-auto py-2">
+          {ETAPAS_PROCESO.map((etapa) => {
+            const isCompletada = etapasCompletadas.has(etapa.numero)
+            const isActual = etapa.numero === etapaActual
+            const estaVencida = etapasVencidas.some(e => e.numero === etapa.numero)
+            const seguimiento = etapasConSeguimiento.get(etapa.numero)
+
+            const tooltipLines = []
+            tooltipLines.push(etapa.nombre)
+            if (seguimiento) {
+              if (seguimiento.fields?.Fecha) tooltipLines.push(`Fecha: ${seguimiento.fields.Fecha}`)
+              if (seguimiento.fields?.Responsable) tooltipLines.push(`Responsable: ${seguimiento.fields.Responsable}`)
+            } else {
+              tooltipLines.push(isActual ? 'Etapa actual' : 'Pendiente')
+            }
+
+            const bgClass = isCompletada ? 'bg-green-600 text-white' : (estaVencida ? 'bg-red-600 text-white' : (isActual ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'))
+
+            return (
+              <div key={etapa.numero} className="flex flex-col items-center min-w-[64px]">
+                <button
+                  onClick={() => seguimiento && onSelectStep && onSelectStep(seguimiento.id)}
+                  title={tooltipLines.join('\n')}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${bgClass} transition-shadow hover:scale-105`}
+                >
+                  {isCompletada ? '✔' : etapa.numero}
+                </button>
+                <div className={`text-xs mt-2 text-center ${isActual ? 'text-blue-600 font-semibold' : 'text-gray-600'}`}>
+                  <span className="hidden xl:inline">{etapa.corto}</span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
       {/* ALERTAS DE ETAPAS VENCIDAS */}
       {etapasVencidas.length > 0 && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -197,28 +234,14 @@ export default function ProcesoVisualizer({ seguimientos = [], compact = false, 
           const isActual = etapa.numero === etapaActual
           const isPendiente = !isCompletada && !isActual
 
-          // Obtener el seguimiento de esta etapa
           const seguimiento = etapasConSeguimiento.get(etapa.numero)
-          
-          // Verificar si está vencida
           const estaVencida = etapasVencidas.some(e => e.numero === etapa.numero)
 
           return (
             <div key={etapa.numero}>
               <div className="flex items-start gap-4">
-                {/* Indicador visual */}
                 <div className="flex flex-col items-center">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition ${
-                      isCompletada
-                        ? 'bg-green-600 text-white'
-                        : estaVencida
-                        ? 'bg-red-600 text-white ring-4 ring-red-100'
-                        : isActual
-                        ? 'bg-blue-600 text-white ring-4 ring-blue-100'
-                        : 'bg-gray-200 text-gray-500'
-                    }`}
-                  >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition ${isCompletada ? 'bg-green-600 text-white' : estaVencida ? 'bg-red-600 text-white ring-4 ring-red-100' : isActual ? 'bg-blue-600 text-white ring-4 ring-blue-100' : 'bg-gray-200 text-gray-500'}`}>
                     {isCompletada ? (
                       <Check size={20} />
                     ) : isActual ? (
@@ -228,27 +251,28 @@ export default function ProcesoVisualizer({ seguimientos = [], compact = false, 
                     )}
                   </div>
 
-                  {/* Línea conectora */}
                   {index < ETAPAS_PROCESO.length - 1 && (
-                    <div
-                      className={`w-0.5 h-8 my-1 ${
-                        isCompletada ? 'bg-green-600' : 'bg-gray-200'
-                      }`}
-                    />
+                    <div className={`w-0.5 h-8 my-1 ${isCompletada ? 'bg-green-600' : 'bg-gray-200'}`} />
                   )}
                 </div>
 
-                {/* Contenido */}
                 <div className="flex-1 pb-4">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h4
-                        className={`text-base font-bold ${
-                          isActual ? 'text-blue-600' : 'text-gray-900'
-                        }`}
-                      >
-                        {etapa.nombre}
+                      <h4 className={`text-base font-bold ${isActual ? 'text-blue-600' : 'text-gray-900'}`}>
+                        {onSelectStep && seguimiento ? (
+                          <button
+                            onClick={() => onSelectStep(seguimiento.id)}
+                            className="text-left text-base font-bold hover:underline"
+                            aria-label={`Ir a seguimiento de etapa ${etapa.numero}`}
+                          >
+                            {etapa.nombre}
+                          </button>
+                        ) : (
+                          etapa.nombre
+                        )}
                       </h4>
+
                       {seguimiento && (
                         <div className="mt-2 text-sm space-y-1">
                           <p className="text-gray-600">
@@ -267,39 +291,28 @@ export default function ProcesoVisualizer({ seguimientos = [], compact = false, 
                           )}
                         </div>
                       )}
+
                       {!seguimiento && isPendiente && (
-                        <p className="text-sm text-gray-400 mt-1">
-                          Etapa pendiente
-                        </p>
+                        <p className="text-sm text-gray-400 mt-1">Etapa pendiente</p>
                       )}
+
                       {isActual && !seguimiento && (
-                        <p className="text-sm text-blue-600 mt-1">
-                          Etapa actual
-                        </p>
+                        <p className="text-sm text-blue-600 mt-1">Etapa actual</p>
                       )}
                     </div>
 
-                    {/* Badge de estado */}
                     <div className="text-right">
                       {isCompletada && (
-                        <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">
-                          Completada
-                        </span>
+                        <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">Completada</span>
                       )}
                       {estaVencida && (
-                        <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-700 rounded-full">
-                          Vencida
-                        </span>
+                        <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-700 rounded-full">Vencida</span>
                       )}
                       {isActual && !estaVencida && (
-                        <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
-                          En curso
-                        </span>
+                        <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">En curso</span>
                       )}
                       {etapa.plazoMaxDias && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          Plazo: {etapa.plazoMaxDias} días
-                        </div>
+                        <div className="text-xs text-gray-500 mt-1">Plazo: {etapa.plazoMaxDias} días</div>
                       )}
                     </div>
                   </div>

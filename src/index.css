@@ -28,6 +28,20 @@ body {
   box-shadow: var(--card-shadow);
 }
 
+/* Helper para sidebar colapsada: ocultar labels */
+.sidebar-collapsed .sidebar-label { display: none }
+.sidebar-collapsed { width: 5rem }
+
+/* Animación para visualizer */
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up { animation: slideUpFade 320ms ease both }
+
+/* Floating hint */
+.floating-hint { position: fixed; right: 2rem; bottom: 10rem; z-index: 50 }
+
 /* Allow embedded SVGs (charts) to overflow slightly for nicer axes/labels */
 .card svg { overflow: visible }
 

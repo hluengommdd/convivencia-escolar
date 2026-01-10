@@ -24,7 +24,7 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="card p-6 bg-red-50">
+        <div className="bg-red-50 p-6 rounded-xl shadow-sm">
           <h2 className="text-xl font-bold text-red-900 mb-4">
             Error en la aplicación
           </h2>

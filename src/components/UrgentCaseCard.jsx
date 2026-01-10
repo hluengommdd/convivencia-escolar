@@ -7,7 +7,7 @@ export default function UrgentCaseCard({ title, student, date, level }) {
   }
 
   return (
-    <div className="card mb-3">
+    <div className="bg-white rounded-xl shadow-sm p-4 mb-3">
       <div className="flex justify-between items-start">
         <div>
           <p className="font-semibold text-gray-900 text-base">{title}</p>

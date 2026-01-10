@@ -4,8 +4,10 @@ import { getCase, updateCase, createFollowup } from '../api/db'
 import { emitDataUpdated } from '../utils/refreshBus'
 import { useSeguimientos } from '../hooks/useSeguimientos'
 import SeguimientoForm from '../components/SeguimientoForm'
+import { FileText } from 'lucide-react'
 import SeguimientoItem from '../components/SeguimientoItem'
 import ProcesoVisualizer from '../components/ProcesoVisualizer'
+import InvolucradosList from '../components/InvolucradosList'
 import { formatDate } from '../utils/formatDate'
 import { useToast } from '../hooks/useToast'
 
@@ -15,6 +17,15 @@ export default function SeguimientoPage({
   showExport = false,
   onCaseClosed,
   onDataChange,
+  // allow parent to hide the historial section when rendering layout blocks
+  showHistorial = true,
+  // when rendered inside the main grid, avoid `.container`
+  embedded = false,
+  // external control for the "nueva acción" modal
+  externalMostrarForm, // boolean | undefined
+  setExternalMostrarForm, // function | undefined
+  // hide the in-component new-action button (we'll render it elsewhere)
+  hideNewAction = false,
 }) {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -84,7 +95,7 @@ export default function SeguimientoPage({
 
   if (!casoId) {
     return (
-      <div className="p-6 text-gray-500">
+      <div className="p-4 sm:p-6 text-gray-500">
         No se ha seleccionado un caso.
       </div>
     )
@@ -92,7 +103,7 @@ export default function SeguimientoPage({
 
   if (loadingCaso) {
     return (
-      <div className="p-6 text-gray-500">
+      <div className="p-4 sm:p-6 text-gray-500">
         Cargando caso…
       </div>
     )
@@ -100,7 +111,7 @@ export default function SeguimientoPage({
 
   if (!caso) {
     return (
-      <div className="p-6 text-red-600">
+      <div className="p-4 sm:p-6 text-red-600">
         No se pudo cargar el caso.
       </div>
     )
@@ -108,7 +119,7 @@ export default function SeguimientoPage({
 
   if (!caso.fields) {
     return (
-      <div className="p-6 text-red-600">
+      <div className="p-4 sm:p-6 text-red-600">
         Error: El caso no tiene campos definidos.
       </div>
     )
@@ -118,12 +129,13 @@ export default function SeguimientoPage({
   const soloLectura = readOnly || esCerrado
 
   return (
-    <div className="container p-6 space-y-6">
+    <div className={`${embedded ? 'w-full' : 'container'} p-4 sm:p-6 space-y-6`}>
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-xl font-bold flex items-center gap-3">
+            <FileText size={20} className="text-blue-600" />
             Seguimiento del Caso
           </h1>
           <p className="text-sm text-gray-600">
@@ -133,15 +145,6 @@ export default function SeguimientoPage({
         </div>
 
         <div className="flex gap-2">
-          {!soloLectura && (
-            <button
-              onClick={cerrarCaso}
-              className="btn-primary bg-green-600 hover:bg-green-700 px-4 py-2"
-            >
-              Cerrar Caso
-            </button>
-          )}
-
           {showExport && (
             <button
               onClick={async () => {
@@ -180,90 +183,87 @@ export default function SeguimientoPage({
             </button>
           )}
 
-          {!esCerrado && (
+          {/* + Nueva Acción ahora en el lugar del botón 'Volver' (puede estar controlado externamente) */}
+          {!esCerrado && !soloLectura && !hideNewAction && (
             <button
-              onClick={() =>
-                navigate(
-                  soloLectura
-                    ? '/casos-cerrados'
-                    : '/casos-activos'
-                )
-              }
-              className="px-3 py-2 text-sm border rounded hover:bg-gray-50"
+              onClick={() => {
+                if (typeof setExternalMostrarForm === 'function') setExternalMostrarForm(true)
+                else setMostrarForm(true)
+              }}
+              className="px-3 py-2 text-sm border rounded hover:bg-gray-50 flex items-center"
             >
-              Volver
+              <span className="text-green-600 mr-2">+</span>
+              Nueva Acción
             </button>
           )}
         </div>
       </div>
 
       {/* RESUMEN */}
-      <div className="card grid grid-cols-2 gap-4 text-sm">
+      <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
         <p><strong>Estudiante:</strong> {caso.fields.Estudiante_Responsable || 'N/A'}</p>
         <p><strong>Curso:</strong> {caso.fields.Curso_Incidente || 'N/A'}</p>
         <p><strong>Fecha / Hora:</strong>{' '} {caso.fields.Fecha_Incidente ? formatDate(caso.fields.Fecha_Incidente) : 'N/A'} ·{' '} {caso.fields.Hora_Incidente || 'N/A'}</p>
         <p><strong>Tipificación:</strong> {caso.fields.Tipificacion_Conducta || 'N/A'}</p>
         <p><strong>Categoría:</strong> {caso.fields.Categoria || 'N/A'}</p>
-        <p className="col-span-2"><strong>Descripción:</strong></p>
-        <div className="col-span-2 break-words whitespace-pre-wrap text-sm">
+        <p className="sm:col-span-2"><strong>Descripción:</strong></p>
+        <div className="sm:col-span-2 break-words whitespace-pre-wrap text-sm">
           {caso.fields.Descripcion || 'Sin descripción'}
         </div>
       </div>
 
-      {/* BOTÓN NUEVA ACCIÓN */}
+      {/* INVOLUCRADOS */}
+      <InvolucradosList casoId={casoId} readOnly={soloLectura} />
+
+      {/* Originalmente aquí estaba +NuevaAcción; ahora colocamos el botón Cerrar Caso */}
       {!soloLectura && !mostrarForm && (
-        <div className="card border-dashed border-gray-300 flex justify-center">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border-dashed border-gray-300 flex justify-center">
           <button
-            onClick={() => setMostrarForm(true)}
-            className="btn-primary px-6 py-3 text-sm font-semibold"
+            onClick={cerrarCaso}
+            className="btn-primary bg-green-600 hover:bg-green-700 px-6 py-3 text-sm font-semibold"
           >
-            + Nueva Acción
+            Cerrar Caso
           </button>
         </div>
       )}
 
-      {/* HISTORIAL DE SEGUIMIENTOS */}
-      <div className="card">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
-          Control de Plazos / Seguimientos
-        </h2>
+      {showHistorial && (
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">
+            Control de Plazos / Seguimientos
+          </h2>
 
-        {loadingSeg && (
-          <p className="text-sm text-gray-500">
-            Cargando seguimientos…
-          </p>
-        )}
+          {loadingSeg && (
+            <p className="text-sm text-gray-500">
+              Cargando seguimientos…
+            </p>
+          )}
 
-        {!loadingSeg && (seguimientos || []).length === 0 && (
-          <p className="text-sm text-gray-500">
-            No hay acciones registradas.
-          </p>
-        )}
+          {!loadingSeg && (seguimientos || []).length === 0 && (
+            <p className="text-sm text-gray-500">
+              No hay acciones registradas.
+            </p>
+          )}
 
-        <div className="space-y-4">
-          {(seguimientos || []).map(seg => (
-            <SeguimientoItem key={seg.id} seg={seg} readOnly={soloLectura} />
-          ))}
+          <div className="space-y-4">
+            {(seguimientos || []).map(seg => (
+              <SeguimientoItem key={seg.id} seg={seg} readOnly={soloLectura} />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* VISUALIZADOR DE PROCESO */}
-      <div className="card">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
-          Progreso del Debido Proceso
-        </h2>
-        <ProcesoVisualizer 
-          seguimientos={seguimientos || []} 
-          fechaInicio={caso.fields.Fecha_Incidente || null}
-        />
-      </div>
+      {/* El visualizador de proceso se muestra en la vista principal de `Seguimientos` (fila inferior). */}
 
       {/* MODAL */}
-      {!soloLectura && mostrarForm && (
+      {!soloLectura && ((typeof externalMostrarForm === 'boolean' ? externalMostrarForm : mostrarForm)) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="glass w-full max-w-lg p-6 relative">
             <button
-              onClick={() => setMostrarForm(false)}
+              onClick={() => {
+                if (typeof setExternalMostrarForm === 'function') setExternalMostrarForm(false)
+                else setMostrarForm(false)
+              }}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
             >
               ✕
@@ -277,7 +277,8 @@ export default function SeguimientoPage({
               casoId={casoId}
               onSaved={() => {
                 setRefreshKey(k => k + 1)
-                setMostrarForm(false)
+                if (typeof setExternalMostrarForm === 'function') setExternalMostrarForm(false)
+                else setMostrarForm(false)
                 emitDataUpdated()
                 onDataChange?.()
               }}
