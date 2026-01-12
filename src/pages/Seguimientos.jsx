@@ -14,6 +14,7 @@ export default function Seguimientos() {
   const [loading, setLoading] = useState(true)
   const [refreshKey, setRefreshKey] = useState(0)
   const [visualizerOpen, setVisualizerOpen] = useState(true)
+  const doRefresh = () => setRefreshKey(k => k + 1)
 
     useEffect(() => {
       async function cargar() {
@@ -114,15 +115,14 @@ export default function Seguimientos() {
               <h3 className="text-base font-semibold leading-tight">Seguimiento del Caso</h3>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => { setRefreshKey(k=>k+1) }} className="px-2 py-1 text-sm border rounded hover:bg-gray-50">Refrescar</button>
             </div>
           </div>
           <div className="flex-1 overflow-auto text-sm">
               {selectedCaso ? (
                 <SeguimientoPage
                   casoId={selectedCaso.id}
-                  onDataChange={() => setRefreshKey(k => k + 1)}
-                  onCaseClosed={() => { setSelectedCaso(null); setRefreshKey(k => k + 1) }}
+                  onDataChange={doRefresh}
+                  onCaseClosed={() => { setSelectedCaso(null); doRefresh() }}
                   showHistorial={false}
                   embedded={true}
                   hideNewAction={true}
@@ -143,7 +143,6 @@ export default function Seguimientos() {
               <h3 className="text-base font-semibold leading-tight">Control de Plazos / Seguimientos</h3>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => { setRefreshKey(k=>k+1) }} className="px-2 py-1 text-sm border rounded hover:bg-gray-50">Refrescar</button>
               {selectedCaso && (
                 <button
                   onClick={() => setExternalMostrarForm(true)}
@@ -157,7 +156,7 @@ export default function Seguimientos() {
           </div>
           <div className="flex-1 overflow-auto text-sm">
             {selectedCaso ? (
-              <ControlDePlazos casoId={selectedCaso.id} />
+              <ControlDePlazos casoId={selectedCaso.id} refreshKey={refreshKey} />
             ) : (
               <div className="text-sm text-gray-500 p-4">Selecciona un caso para ver las acciones</div>
             )}

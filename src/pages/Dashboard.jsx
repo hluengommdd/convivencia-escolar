@@ -283,7 +283,6 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-900">Casos activos por tipificación</h3>
             <div className="flex items-center gap-2">
-              <button onClick={() => {}} className="px-2 py-1 text-sm border rounded hover:bg-gray-50">Refrescar</button>
             </div>
           </div>
 
@@ -319,7 +318,6 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-900">Estado de plazos (Control de Plazos)</h3>
             <div className="flex items-center gap-2">
-              <button onClick={() => {}} className="px-2 py-1 text-sm border rounded hover:bg-gray-50">Refrescar</button>
             </div>
           </div>
 
@@ -354,7 +352,6 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-900">Casos activos por curso (Top 10)</h3>
             <div className="flex items-center gap-2">
-              <button onClick={() => {}} className="px-2 py-1 text-sm border rounded hover:bg-gray-50">Refrescar</button>
             </div>
           </div>
 
@@ -418,7 +415,6 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-900">Alertas de Plazos</h2>
             <div className="flex items-center gap-2">
-              <button onClick={() => {}} className="px-2 py-1 text-sm border rounded hover:bg-gray-50">Refrescar</button>
             </div>
           </div>
 
