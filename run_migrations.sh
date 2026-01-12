@@ -13,10 +13,10 @@ fi
 
 DIR="$(cd "$(dirname "$0")" && pwd)/schema"
 
-echo "Running migration 004..."
+echo "Running migration 004 (compute_due_date & trigger)..."
 psql "$DATABASE_URL" -f "$DIR/004_add_holidays_and_compute_due_date.sql"
 
-echo "Seeding stage_sla and holidays (005)..."
+echo "Seeding stage_sla (005)..."
 psql "$DATABASE_URL" -f "$DIR/005_seed_stage_sla_and_holidays.sql"
 
 echo "Migrations completed."

@@ -1,11 +1,11 @@
 # Migration Runbook — Holidays / SLA / Trigger
 
+
 This runbook describes safe steps to apply the migration and seed scripts added in `schema/` to a staging or production database.
 
 Files
-- `schema/004_add_holidays_and_compute_due_date.sql` — creates `holidays`, `compute_due_date` function and trigger `trg_case_followups_set_due_date`.
-- `schema/005_seed_stage_sla_and_holidays.sql` — seed `stage_sla` and example holidays.
-- `schema/006_populate_holidays_biobio_2026.sql` — populates `public.holidays` for Biobío 2026 (school breaks expanded).
+- `schema/004_add_holidays_and_compute_due_date.sql` — provides `compute_due_date(start_date, days, consider_holidays)` (now ignores holidays) and trigger `trg_case_followups_set_due_date` that ensures `due_date` is set.
+- `schema/005_seed_stage_sla_and_holidays.sql` — seeds `stage_sla` values (no holidays seeding).
 - `run_migrations.sh` — helper script that runs `004` then `005` using `DATABASE_URL`.
 
 Prerequisites
@@ -20,29 +20,23 @@ Staging (recommended)
 export DATABASE_URL="postgres://<USER>:<PASS>@<HOST>:5432/<DBNAME>"
 ```
 
-2. Run the migration file `004` only (creates functions/trigger):
+
+2. Run the migration file `004` only (creates compute function and trigger):
 
 ```bash
 psql "$DATABASE_URL" -f schema/004_add_holidays_and_compute_due_date.sql
 ```
 
-3. Seed `stage_sla` and a few holidays (optional):
+3. Seed `stage_sla` (no holidays):
 
 ```bash
 psql "$DATABASE_URL" -f schema/005_seed_stage_sla_and_holidays.sql
 ```
 
-4. Populate holidays for Biobío 2026 (optional dataset):
-
-```bash
-psql "$DATABASE_URL" -f schema/006_populate_holidays_biobio_2026.sql
-```
 
 5. Verification queries (staging):
 
 ```sql
-SELECT count(*) FROM public.holidays;
-SELECT * FROM public.holidays ORDER BY holiday_date LIMIT 20;
 SELECT public.compute_due_date(current_date, 3, true) AS due_test;
 WITH one_case AS (SELECT id FROM public.cases LIMIT 1)
 INSERT INTO public.case_followups (case_id, process_stage, action_date)
@@ -58,14 +52,13 @@ Production (only after staging validation)
 3. Run the same commands as in staging (`004`, `005`, `006`) using the production `DATABASE_URL`.
 
 Rollback / Removal
-- To remove the trigger/function (if needed):
+
+-- To remove the trigger/function (if needed):
 
 ```sql
 DROP TRIGGER IF EXISTS trg_case_followups_set_due_date ON public.case_followups;
 DROP FUNCTION IF EXISTS public.case_followups_set_due_date();
 DROP FUNCTION IF EXISTS public.compute_due_date(DATE, INTEGER, BOOLEAN);
--- Optionally remove holidays table if safe:
--- DROP TABLE IF EXISTS public.holidays;
 ```
 
 Notes & Safety
