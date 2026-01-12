@@ -2,8 +2,8 @@ import React from 'react'
 import { useSeguimientos } from '../hooks/useSeguimientos'
 import SeguimientoItem from '../components/SeguimientoItem'
 
-export default function ControlDePlazos({ casoId }) {
-  const { data: seguimientos = [], loading } = useSeguimientos(casoId)
+export default function ControlDePlazos({ casoId, refreshKey }) {
+  const { data: seguimientos = [], loading } = useSeguimientos(casoId, refreshKey)
 
   if (!casoId) return <div className="text-sm text-gray-500">Selecciona un caso.</div>
 
