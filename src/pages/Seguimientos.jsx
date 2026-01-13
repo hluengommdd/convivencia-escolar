@@ -39,11 +39,6 @@ export default function Seguimientos() {
   const [procesoInfo, setProcesoInfo] = useState(null);
   const [controlPlazos, setControlPlazos] = useState([]);
 
-  useEffect(() => {
-    if (controlPlazos?.length) {
-      console.log('✅ controlPlazos[0]:', controlPlazos[0]);
-    }
-  }, [controlPlazos]);
 
   const doRefresh = () => setRefreshKey((k) => k + 1);
 
