@@ -128,6 +128,9 @@ function mapControlPlazoRow(row) {
       Alerta_Urgencia: row.alerta_urgencia || calcularAlerta(row.dias_restantes),
       Fecha_Plazo: row.fecha_plazo || EMPTY,
       CASOS_ACTIVOS: [row.case_id],
+      // Backend-driven fields from v_control_plazos_plus
+      days_to_due: row.days_to_due ?? null,
+      stage_num_from: row.stage_num_from ?? null,
     },
     _supabaseData: row,
   }
@@ -314,7 +317,6 @@ export async function createFollowup(fields) {
             stage_status: fields.Estado_Etapa || 'Completada',
             observations: fields.Observaciones || '',
             description: fields.Descripcion || '',
-            due_date: fields.Fecha_Plazo || null,
           },
         ])
         .select()
@@ -331,21 +333,40 @@ export async function createFollowup(fields) {
 }
 
 /**
+ * Obtener todos los controles de plazos (vista global)
+ * @returns {Promise<Array>}
+ */
+export async function getAllControlPlazos() {
+  const { data, error } = await withRetry(() =>
+    supabase
+      .from('v_control_plazos_plus')
+      .select('*')
+      .order('dias_restantes', { ascending: true })
+  )
+  if (error) throw error
+  return (data || []).map(mapControlPlazoRow)
+}
+
+/**
  * Obtener alertas y control de plazos desde v_control_plazos
  * @returns {Promise<Array>}
  */
-export async function getControlPlazos() {
+export async function getControlPlazos(caseId) {
   try {
+    // Guard clause: evita queries con caseId indefinido
+    if (!caseId) return []
+
     const { data, error } = await withRetry(() =>
       supabase
-        .from('v_control_plazos')
+        .from('v_control_plazos_plus')
         .select('*')
+        .eq('case_id', caseId)
         .order('dias_restantes', { ascending: true })
     )
 
     if (error) throw error
 
-    console.log('📊 Datos de v_control_plazos:', data)
+    console.log('📊 Datos de v_control_plazos_plus:', data)
 
     return (data || []).map(mapControlPlazoRow)
   } catch (error) {

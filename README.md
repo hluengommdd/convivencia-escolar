@@ -73,3 +73,18 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+## ⏱️ Control de plazos (SLA) — Backend-driven
+
+### Decisión técnica (NO modificar sin revisar DB)
+- El SLA legal se define exclusivamente en backend.
+- Fuente de verdad: `stage_sla`.
+- La UI solo visualiza (`v_control_plazos_plus`).
+- Etapas 3 y 4 NO tienen vencimiento (`days_to_due = NULL`, `due_date = NULL`).
+- Columna `case_followups.due_date` permite NULL.
+- Trigger legacy `set_followup_due_date` está deshabilitado.
+- Trigger activo: `case_followups_set_due_date`.
+
+### Operativa
+- Cambios de plazo → **solo** modificar `stage_sla`.
+- No calcular plazos en frontend.

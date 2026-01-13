@@ -1,14 +1,14 @@
 import { Check, Circle, Clock, AlertCircle } from 'lucide-react'
 
 const ETAPAS_PROCESO = [
-  { numero: 1, nombre: '1. Comunicación/Denuncia', corto: 'Denuncia', plazoMaxDias: 2 },
-  { numero: 2, nombre: '2. Notificación Apoderados', corto: 'Notificación', plazoMaxDias: 2 },
-  { numero: 3, nombre: '3. Recopilación Antecedentes', corto: 'Antecedentes', plazoMaxDias: 5 },
-  { numero: 4, nombre: '4. Entrevistas', corto: 'Entrevistas', plazoMaxDias: 5 },
-  { numero: 5, nombre: '5. Investigación/Análisis', corto: 'Investigación', plazoMaxDias: 10 },
-  { numero: 6, nombre: '6. Resolución y Sanciones', corto: 'Resolución', plazoMaxDias: 2 },
-  { numero: 7, nombre: '7. Apelación/Recursos', corto: 'Apelación', plazoMaxDias: 5 },
-  { numero: 8, nombre: '8. Seguimiento', corto: 'Seguimiento', plazoMaxDias: null },
+  { numero: 1, nombre: '1. Comunicación/Denuncia', corto: 'Denuncia' },
+  { numero: 2, nombre: '2. Notificación Apoderados', corto: 'Notificación' },
+  { numero: 3, nombre: '3. Recopilación Antecedentes', corto: 'Antecedentes' },
+  { numero: 4, nombre: '4. Entrevistas', corto: 'Entrevistas' },
+  { numero: 5, nombre: '5. Investigación/Análisis', corto: 'Investigación' },
+  { numero: 6, nombre: '6. Resolución y Sanciones', corto: 'Resolución' },
+  { numero: 7, nombre: '7. Apelación/Recursos', corto: 'Apelación' },
+  { numero: 8, nombre: '8. Seguimiento', corto: 'Seguimiento' },
 ]
 
 export default function ProcesoVisualizer({ seguimientos = [], compact = false, fechaInicio = null, onSelectStep = null }) {
@@ -62,36 +62,23 @@ export default function ProcesoVisualizer({ seguimientos = [], compact = false, 
     }
   })
 
-  // Calcular etapas vencidas
+  // Calcular etapas vencidas usando days_to_due del backend
   const etapasVencidas = []
-  const hoy = new Date()
   
   ETAPAS_PROCESO.forEach(etapa => {
-    if (!etapasCompletadas.has(etapa.numero) && etapa.plazoMaxDias) {
-      const seg = etapasConSeguimiento.get(etapa.numero)
-      if (seg && seg.fields?.Fecha_Seguimiento) {
-        const fechaSeg = new Date(seg.fields.Fecha_Seguimiento)
-        const diasTranscurridos = Math.floor((hoy - fechaSeg) / (1000 * 60 * 60 * 24))
-        
-        if (diasTranscurridos > etapa.plazoMaxDias) {
-          etapasVencidas.push({
-            numero: etapa.numero,
-            nombre: etapa.nombre,
-            diasVencidos: diasTranscurridos - etapa.plazoMaxDias
-          })
-        }
-      } else if (!seg && fechaInicio && etapa.numero === 1) {
-        // Si no hay seguimiento en etapa 1, calcular desde fecha de inicio del caso
-        const fechaInicioDate = new Date(fechaInicio)
-        const diasTranscurridos = Math.floor((hoy - fechaInicioDate) / (1000 * 60 * 60 * 24))
-        if (diasTranscurridos > etapa.plazoMaxDias) {
-          etapasVencidas.push({
-            numero: etapa.numero,
-            nombre: etapa.nombre,
-            diasVencidos: diasTranscurridos - etapa.plazoMaxDias
-          })
-        }
-      }
+    const seguimiento = etapasConSeguimiento.get(etapa.numero)
+    const days = seguimiento?.fields?.days_to_due
+
+    if (
+      typeof days === 'number' &&
+      days < 0 &&
+      !etapasCompletadas.has(etapa.numero)
+    ) {
+      etapasVencidas.push({
+        numero: etapa.numero,
+        nombre: etapa.nombre,
+        diasVencidos: Math.abs(days),
+      })
     }
   })
 
@@ -311,9 +298,13 @@ export default function ProcesoVisualizer({ seguimientos = [], compact = false, 
                       {isActual && !estaVencida && (
                         <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">En curso</span>
                       )}
-                      {etapa.plazoMaxDias && (
-                        <div className="text-xs text-gray-500 mt-1">Plazo: {etapa.plazoMaxDias} días</div>
-                      )}
+                      {
+                        (() => {
+                          const d = seguimiento?.fields?.days_to_due
+                          const badge = d == null ? '—' : `${d}d`
+                          return <div className="text-xs text-gray-500 mt-1">Plazo: {badge}</div>
+                        })()
+                      }
                     </div>
                   </div>
                 </div>
