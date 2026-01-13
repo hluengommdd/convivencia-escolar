@@ -270,11 +270,7 @@ export async function updateCase(id, fields) {
  */
 export async function getCaseFollowups(caseId) {
   try {
-    // Guard against undefined/null/empty caseId
-    if (!caseId || typeof caseId !== 'string' || caseId.trim() === '') {
-      console.warn('⚠️ getCaseFollowups: caseId inválido:', caseId)
-      return []
-    }
+    if (!caseId) throw new Error('Se requiere caseId')
 
     const { data, error } = await withRetry(() =>
       supabase

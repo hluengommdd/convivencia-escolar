@@ -3,12 +3,11 @@ import { getCaseFollowups } from '../api/db'
 
 export function useSeguimientos(casoId, refreshKey = 0) {
   const [data, setData] = useState([])
-  const [loading, setLoading] = useState(false) // Start with false since we check !casoId first
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function cargarSeguimientos() {
-      // Guard against undefined/null/empty caseId
-      if (!casoId || typeof casoId !== 'string' || casoId.trim() === '') {
+      if (!casoId) {
         setData([])
         setLoading(false)
         return
