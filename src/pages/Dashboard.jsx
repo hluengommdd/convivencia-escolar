@@ -214,7 +214,7 @@ export default function Dashboard() {
   return (
     <div className="container space-y-8">
       <p className="text-sm text-gray-600 font-medium">
-        Resumen Operativo de Convivencia Escolar · Año lectivo 2025
+        Resumen Operativo de Convivencia Escolar · Año lectivo 2026
       </p>
 
       {/* KPIs – FILA 1 */}
