@@ -334,23 +334,76 @@ export async function createFollowup(fields) {
  * Obtener alertas y control de plazos desde v_control_plazos
  * @returns {Promise<Array>}
  */
-export async function getControlPlazos() {
+export async function getControlPlazos(caseId) {
   try {
     const { data, error } = await withRetry(() =>
       supabase
-        .from('v_control_plazos')
+        .from('v_control_plazos_plus')
         .select('*')
-        .order('dias_restantes', { ascending: true })
+        .eq('case_id', caseId)
     )
-
     if (error) throw error
-
-    console.log('📊 Datos de v_control_plazos:', data)
-
-    return (data || []).map(mapControlPlazoRow)
+    const mapped = (data || []).map(mapControlPlazoRow)
+    console.log('📊 Datos de v_control_plazos:', mapped)
+    return mapped
   } catch (error) {
-    console.error('Error fetching control plazos:', error)
+    console.error('Error fetching control_plazos:', error)
     throw error
+  }
+}
+
+/**
+ * Obtener SLA por etapa desde stage_sla
+ * Espera columnas mínimas: stage_number (int), days_to_due (int|null)
+ */
+export async function getStageSla() {
+  // Helper to log PostgREST errors with useful fields
+  const logPostgrestError = (label, error) => {
+    try {
+      console.error(label, {
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code,
+        raw: error,
+      })
+    } catch (e) {
+      console.error(label, error)
+    }
+  }
+
+  // 1) Intento: ordenar por `stage_number` (caso ideal)
+  try {
+    const { data, error } = await withRetry(() =>
+      supabase.from('stage_sla').select('*').order('stage_number', { ascending: true })
+    )
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    logPostgrestError('Error fetching stage_sla ordered by stage_number', error)
+  }
+
+  // 2) Intento: ordenar por `stage_id` (nombres alternativos comunes)
+  try {
+    const { data, error } = await withRetry(() =>
+      supabase.from('stage_sla').select('*').order('stage_id', { ascending: true })
+    )
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    logPostgrestError('Error fetching stage_sla ordered by stage_id', error)
+  }
+
+  // 3) Intento: sin order, traer algunas filas para inspección
+  try {
+    const { data, error } = await withRetry(() =>
+      supabase.from('stage_sla').select('*').limit(100)
+    )
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    logPostgrestError('Error fetching stage_sla without order', error)
+    return []
   }
 }
 
