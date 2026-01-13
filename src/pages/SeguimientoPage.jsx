@@ -26,6 +26,9 @@ export default function SeguimientoPage({
   setExternalMostrarForm, // function | undefined
   // hide the in-component new-action button (we'll render it elsewhere)
   hideNewAction = false,
+  // UI helpers: allow parent to hide the internal header/resumen when embedding
+  hideHeader = false,
+  hideResumen = false,
 }) {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -132,88 +135,94 @@ export default function SeguimientoPage({
     <div className={`${embedded ? 'w-full' : 'container'} p-4 sm:p-6 space-y-6`}>
 
       {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-xl font-bold flex items-center gap-3">
-            <FileText size={20} className="text-blue-600" />
-            Seguimiento del Caso
-          </h1>
-          <p className="text-sm text-gray-600">
-            ID Caso <strong>{caso.fields.ID_Caso}</strong> · Estado{' '}
-            <strong>{caso.fields.Estado}</strong>
-          </p>
+      {!hideHeader && (
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-xl font-bold flex items-center gap-3">
+              <FileText size={20} className="text-blue-600" />
+              Seguimiento del Caso
+            </h1>
+            <p className="text-sm text-gray-600">
+              ID Caso <strong>{caso.fields.ID_Caso}</strong> · Estado{' '}
+              <strong>{caso.fields.Estado}</strong>
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            {showExport && (
+              <button
+                onClick={async () => {
+                  try {
+                    const [{ pdf }, { default: InformeCasoDocument }] = await Promise.all([
+                      import('@react-pdf/renderer'),
+                      import('../components/InformeCasoDocument'),
+                    ])
+
+                    const doc = (
+                      <InformeCasoDocument
+                        caso={caso}
+                        seguimientos={seguimientos || []}
+                      />
+                    )
+
+                    const blob = await pdf(doc).toBlob()
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.download = `Informe_Caso_${caso.fields?.ID_Caso || caso.id}.pdf`
+                    document.body.appendChild(a)
+                    a.click()
+                    a.remove()
+                    URL.revokeObjectURL(url)
+                    push({ type: 'success', title: 'PDF listo', message: 'Informe generado' })
+                  } catch (e) {
+                    console.error(e)
+                    push({ type: 'error', title: 'Error al generar PDF', message: e?.message || 'Intenta de nuevo' })
+                    alert('Error al generar PDF')
+                  }
+                }}
+                className="btn-primary bg-blue-600 hover:bg-blue-700 px-4 py-2"
+              >
+                Exportar Informe
+              </button>
+            )}
+
+            {/* + Nueva Acción ahora en el lugar del botón 'Volver' (puede estar controlado externamente) */}
+            {!esCerrado && !soloLectura && !hideNewAction && (
+              <button
+                onClick={() => {
+                  if (typeof setExternalMostrarForm === 'function') setExternalMostrarForm(true)
+                  else setMostrarForm(true)
+                }}
+                className="px-3 py-2 text-sm border rounded hover:bg-gray-50 flex items-center"
+              >
+                <span className="text-green-600 mr-2">+</span>
+                Nueva Acción
+              </button>
+            )}
+          </div>
         </div>
-
-        <div className="flex gap-2">
-          {showExport && (
-            <button
-              onClick={async () => {
-                try {
-                  const [{ pdf }, { default: InformeCasoDocument }] = await Promise.all([
-                    import('@react-pdf/renderer'),
-                    import('../components/InformeCasoDocument'),
-                  ])
-
-                  const doc = (
-                    <InformeCasoDocument
-                      caso={caso}
-                      seguimientos={seguimientos || []}
-                    />
-                  )
-
-                  const blob = await pdf(doc).toBlob()
-                  const url = URL.createObjectURL(blob)
-                  const a = document.createElement('a')
-                  a.href = url
-                  a.download = `Informe_Caso_${caso.fields?.ID_Caso || caso.id}.pdf`
-                  document.body.appendChild(a)
-                  a.click()
-                  a.remove()
-                  URL.revokeObjectURL(url)
-                  push({ type: 'success', title: 'PDF listo', message: 'Informe generado' })
-                } catch (e) {
-                  console.error(e)
-                  push({ type: 'error', title: 'Error al generar PDF', message: e?.message || 'Intenta de nuevo' })
-                  alert('Error al generar PDF')
-                }
-              }}
-              className="btn-primary bg-blue-600 hover:bg-blue-700 px-4 py-2"
-            >
-              Exportar Informe
-            </button>
-          )}
-
-          {/* + Nueva Acción ahora en el lugar del botón 'Volver' (puede estar controlado externamente) */}
-          {!esCerrado && !soloLectura && !hideNewAction && (
-            <button
-              onClick={() => {
-                if (typeof setExternalMostrarForm === 'function') setExternalMostrarForm(true)
-                else setMostrarForm(true)
-              }}
-              className="px-3 py-2 text-sm border rounded hover:bg-gray-50 flex items-center"
-            >
-              <span className="text-green-600 mr-2">+</span>
-              Nueva Acción
-            </button>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* RESUMEN */}
-      <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-        <p><strong>Estudiante:</strong> {caso.fields.Estudiante_Responsable || 'N/A'}</p>
-        <p><strong>Curso:</strong> {caso.fields.Curso_Incidente || 'N/A'}</p>
-        <p><strong>Fecha / Hora:</strong>{' '} {caso.fields.Fecha_Incidente ? formatDate(caso.fields.Fecha_Incidente) : 'N/A'} ·{' '} {caso.fields.Hora_Incidente || 'N/A'}</p>
-        <p><strong>Tipificación:</strong> {caso.fields.Tipificacion_Conducta || 'N/A'}</p>
-        <p><strong>Categoría:</strong> {caso.fields.Categoria || 'N/A'}</p>
-        <p className="sm:col-span-2"><strong>Descripción:</strong></p>
-        <div className="sm:col-span-2 break-words whitespace-pre-wrap text-sm">
-          {caso.fields.Descripcion || 'Sin descripción'}
+      {!hideResumen && (
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <p><strong>Estudiante:</strong> {caso.fields.Estudiante_Responsable || 'N/A'}</p>
+          <p><strong>Curso:</strong> {caso.fields.Curso_Incidente || 'N/A'}</p>
+          <p><strong>Fecha / Hora:</strong>{' '} {caso.fields.Fecha_Incidente ? formatDate(caso.fields.Fecha_Incidente) : 'N/A'} ·{' '} {caso.fields.Hora_Incidente || 'N/A'}</p>
+          <p><strong>Tipificación:</strong> {caso.fields.Tipificacion_Conducta || 'N/A'}</p>
+          <p><strong>Categoría:</strong> {caso.fields.Categoria || 'N/A'}</p>
+          <p className="sm:col-span-2"><strong>Descripción:</strong></p>
+          <div className="sm:col-span-2 break-words whitespace-pre-wrap text-sm">
+            {caso.fields.Descripcion || 'Sin descripción'}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* INVOLUCRADOS */}
-      <InvolucradosList casoId={casoId} readOnly={soloLectura} />
+      {!hideResumen && (
+        <InvolucradosList casoId={casoId} readOnly={soloLectura} />
+      )}
 
       {/* Originalmente aquí estaba +NuevaAcción; ahora colocamos el botón Cerrar Caso */}
       {!soloLectura && !mostrarForm && (
