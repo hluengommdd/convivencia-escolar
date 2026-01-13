@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { getControlPlazos, getCases } from '../api/db'
+import { getAllControlPlazos, getCases } from '../api/db'
 import { formatDate } from '../utils/formatDate'
 import { AlertTriangle, Clock, CheckCircle, FileText } from 'lucide-react'
 
@@ -18,7 +18,7 @@ export default function AlertasPlazos() {
       try {
         setLoading(true)
         const [controlData, casesData] = await Promise.all([
-          getControlPlazos(),
+          getAllControlPlazos(),
           getCases()
         ])
         // Filtrar alertas: no mostrar alertas vinculadas a casos cerrados

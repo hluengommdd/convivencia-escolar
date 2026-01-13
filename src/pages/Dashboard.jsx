@@ -24,7 +24,7 @@ import { Bar } from 'recharts/es6/cartesian/Bar'
 
 import StatCard from '../components/StatCard'
 import UrgentCaseCard from '../components/UrgentCaseCard'
-import { getCases, getControlPlazos } from '../api/db'
+import { getCases, getAllControlPlazos } from '../api/db'
 import { formatDate } from '../utils/formatDate'
 import { onDataUpdated } from '../utils/refreshBus'
 import { useToast } from '../hooks/useToast'
@@ -67,7 +67,7 @@ export default function Dashboard() {
         setLoading(true)
         const [allCases, plazos] = await Promise.all([
           getCases(),
-          getControlPlazos()
+          getAllControlPlazos()
         ])
 
         if (!mounted) return
