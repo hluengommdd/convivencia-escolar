@@ -17,34 +17,34 @@ export default function Seguimientos() {
   const [detailsOpen, setDetailsOpen] = useState(true)
   const doRefresh = () => setRefreshKey(k => k + 1)
 
-    useEffect(() => {
-      async function cargar() {
-        try {
-          setLoading(true)
-          const data = await getCases()
+  useEffect(() => {
+    async function cargar() {
+      try {
+        setLoading(true)
+        const data = await getCases()
 
-          // SOLO CASOS EN SEGUIMIENTO (EXCLUYE CERRADOS)
-          const enSeguimiento = data.filter(
-            c => c.fields?.Estado && c.fields.Estado !== 'Cerrado'
-          )
+        // SOLO CASOS EN SEGUIMIENTO (EXCLUYE CERRADOS)
+        const enSeguimiento = data.filter(
+          c => c.fields?.Estado && c.fields.Estado !== 'Cerrado'
+        )
 
-          setCasos(enSeguimiento)
-        } catch (e) {
-          console.error(e)
-        } finally {
-          setLoading(false)
-        }
+        setCasos(enSeguimiento)
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setLoading(false)
       }
+    }
 
-      cargar()
-    }, [refreshKey])
+    cargar()
+  }, [refreshKey])
 
-    // Seguimientos del caso seleccionado (para el visualizador global)
-    const { data: casoSeguimientos = [], loading: loadingCasoSeg } = useSeguimientos(
-      selectedCaso?.id || null,
-      // re-evaluate when selectedCaso changes or refreshKey
-      selectedCaso ? refreshKey : null
-    )
+  // Seguimientos del caso seleccionado (para el visualizador global)
+  const { data: casoSeguimientos = [], loading: loadingCasoSeg } = useSeguimientos(
+    selectedCaso?.id || null,
+    // re-evaluate when selectedCaso changes or refreshKey
+    selectedCaso ? refreshKey : null
+  )
 
   const headerInfo = useMemo(() => {
     if (!selectedCaso) return null
@@ -65,22 +65,22 @@ export default function Seguimientos() {
       <div className="grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-6 h-full">
         {/* Columna izquierda (principal) */}
         <div className="flex flex-col gap-4 min-h-0">
-          {/* Header del caso */}
+          {/* Header del caso compacto */}
           <div className="sticky top-0 z-20">
             {headerInfo ? (
-              <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 text-white rounded-2xl shadow-lg p-4 sm:p-5 flex flex-wrap items-start justify-between gap-4">
-                <div className="flex items-center gap-4 min-w-[240px]">
-                  <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-lg font-semibold">
+              <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 text-white rounded-2xl shadow-lg p-4 sm:p-5 flex flex-wrap items-start justify-between gap-4 max-h-[112px]">
+                <div className="flex items-center gap-3 min-w-[220px]">
+                  <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-base font-semibold">
                     {headerInfo.estudiante?.[0] || 'E'}
                   </div>
                   <div>
-                    <div className="text-sm text-slate-200">Estudiante</div>
-                    <div className="text-xl font-semibold leading-tight">{headerInfo.estudiante}</div>
-                    <div className="text-sm text-slate-300">{headerInfo.curso}</div>
+                    <div className="text-xs text-slate-200">Estudiante</div>
+                    <div className="text-lg font-semibold leading-tight">{headerInfo.estudiante}</div>
+                    <div className="text-xs text-slate-300">{headerInfo.curso}</div>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 text-sm">
+                <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
                   <span className="px-3 py-1 rounded-full bg-white/10 border border-white/10 font-medium">
                     {headerInfo.tipificacion}
                   </span>
@@ -97,9 +97,9 @@ export default function Seguimientos() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setExternalMostrarForm(true)}
-                    className="inline-flex items-center gap-2 bg-white text-slate-900 font-semibold px-4 py-2 rounded-xl shadow hover:shadow-md transition"
+                    className="inline-flex items-center gap-2 bg-white text-slate-900 font-semibold px-3 py-2 rounded-xl shadow hover:shadow-md transition text-sm"
                   >
-                    <Plus size={16} />
+                    <Plus size={14} />
                     Nueva Acción
                   </button>
                 </div>
@@ -117,15 +117,15 @@ export default function Seguimientos() {
             )}
           </div>
 
-          {/* Lista de casos */}
+          {/* Lista de casos (navegación secundaria) */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col min-h-0">
-            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Menu size={18} className="text-blue-600" />
-                <h2 className="text-base font-semibold leading-tight">Casos en Seguimiento</h2>
+            <div className="px-4 sm:px-6 py-3 sm:py-3 border-b flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Menu size={14} className="text-blue-600" />
+                <h2 className="text-sm font-semibold leading-tight text-slate-800">Casos en seguimiento</h2>
               </div>
             </div>
-            <div className="hidden sm:grid grid-cols-12 gap-2 px-4 sm:px-6 py-2 sm:py-3 text-sm font-semibold text-gray-500 border-b leading-tight">
+            <div className="hidden sm:grid grid-cols-12 gap-2 px-4 sm:px-6 py-2 text-xs font-semibold text-gray-500 border-b leading-tight">
               <div className="sm:col-span-1">#</div>
               <div className="sm:col-span-3">Fecha</div>
               <div className="sm:col-span-4">Estudiante</div>
@@ -170,22 +170,13 @@ export default function Seguimientos() {
             </div>
           </div>
 
-          {/* Línea de seguimientos */}
+          {/* Línea de seguimientos (foco principal) */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-6 flex flex-col min-h-0">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <Clock size={18} className="text-yellow-500" />
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Clock size={16} className="text-yellow-500" />
                 <h3 className="text-base font-semibold leading-tight">Línea de Seguimientos</h3>
               </div>
-              {selectedCaso && (
-                <button
-                  onClick={() => setExternalMostrarForm(true)}
-                  className="hidden sm:inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 text-sm font-semibold rounded-lg shadow-sm"
-                >
-                  <Plus size={14} />
-                  Nueva Acción
-                </button>
-              )}
             </div>
 
             <div className="flex-1 overflow-auto text-sm">
@@ -201,11 +192,9 @@ export default function Seguimientos() {
 
           {/* Seguimiento detallado embebido */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-6 flex flex-col min-h-0">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <FileText size={18} className="text-green-600" />
-                <h3 className="text-base font-semibold leading-tight">Seguimiento del Caso</h3>
-              </div>
+            <div className="flex items-center gap-2 mb-2">
+              <FileText size={16} className="text-green-600" />
+              <h3 className="text-base font-semibold leading-tight">Detalle y acciones</h3>
             </div>
             <div className="flex-1 overflow-auto text-sm">
               {selectedCaso ? (
@@ -232,7 +221,7 @@ export default function Seguimientos() {
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-5 flex flex-col">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <FileText size={18} className="text-slate-600" />
+                <FileText size={16} className="text-slate-600" />
                 <h3 className="text-base font-semibold text-slate-900">Detalles del Caso</h3>
               </div>
               <button
@@ -266,7 +255,7 @@ export default function Seguimientos() {
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-5 flex flex-col min-h-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <List size={18} className="text-purple-600" />
+                <List size={16} className="text-purple-600" />
                 <div>
                   <h3 className="text-base font-semibold leading-tight text-slate-900">Progreso del Caso</h3>
                   <p className="text-xs text-slate-500">{casoSeguimientos.length} acciones registradas</p>
