@@ -65,8 +65,10 @@ export default function Dashboard() {
     async function cargar() {
       try {
         setLoading(true)
-        const allCases = await getCases()
-        const plazos = [] // avoid calling getControlPlazos without a caseId (prevents case_id=eq.undefined requests)
+        const [allCases, plazos] = await Promise.all([
+          getCases(),
+          getControlPlazos()
+        ])
 
         if (!mounted) return
 

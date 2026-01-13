@@ -335,7 +335,6 @@ export async function createFollowup(fields) {
  * @returns {Promise<Array>}
  */
 export async function getControlPlazos(caseId) {
-  if (!caseId) return []
   try {
     const { data, error } = await withRetry(() =>
       supabase
