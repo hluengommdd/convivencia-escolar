@@ -199,21 +199,37 @@ export default function SeguimientoPage({
         </div>
       </div>
 
-      {/* RESUMEN */}
-      <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-        <p><strong>Estudiante:</strong> {caso.fields.Estudiante_Responsable || 'N/A'}</p>
-        <p><strong>Curso:</strong> {caso.fields.Curso_Incidente || 'N/A'}</p>
-        <p><strong>Fecha / Hora:</strong>{' '} {caso.fields.Fecha_Incidente ? formatDate(caso.fields.Fecha_Incidente) : 'N/A'} ·{' '} {caso.fields.Hora_Incidente || 'N/A'}</p>
-        <p><strong>Tipificación:</strong> {caso.fields.Tipificacion_Conducta || 'N/A'}</p>
-        <p><strong>Categoría:</strong> {caso.fields.Categoria || 'N/A'}</p>
-        <p className="sm:col-span-2"><strong>Descripción:</strong></p>
-        <div className="sm:col-span-2 break-words whitespace-pre-wrap text-sm">
-          {caso.fields.Descripcion || 'Sin descripción'}
-        </div>
-      </div>
+      {!loadingCaso && caso?.fields && (
+        <div className="space-y-4">
 
-      {/* INVOLUCRADOS */}
-      <InvolucradosList casoId={casoId} readOnly={soloLectura} />
+          <div className="rounded-xl border p-4 bg-gray-50">
+            <div className="text-xs text-gray-500">Estudiante</div>
+            <div className="text-lg font-bold text-gray-900">
+              {caso.fields.Estudiante_Responsable || 'N/A'}
+            </div>
+            <div className="text-sm text-gray-600">
+              Curso: {caso.fields.Curso_Incidente || 'N/A'}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-xs font-extrabold text-slate-700">
+              Descripción
+            </div>
+            <div className="text-slate-600 mt-1">
+              {caso.fields.Descripcion || 'Sin descripción registrada.'}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-sm font-semibold text-gray-900 mb-2">
+              Involucrados
+            </div>
+            <InvolucradosList casoId={casoId} readOnly />
+          </div>
+
+        </div>
+      )}
 
       {/* Originalmente aquí estaba +NuevaAcción; ahora colocamos el botón Cerrar Caso */}
       {!soloLectura && !mostrarForm && (

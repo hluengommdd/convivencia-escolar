@@ -21,6 +21,7 @@ export default function App() {
             <Route path="/casos-activos" element={<CasosActivos />} />
             <Route path="/casos-cerrados" element={<CasosCerrados />} />
             <Route path="/seguimientos" element={<Seguimientos />} />
+            <Route path="/seguimientos/:caseId" element={<Seguimientos />} />
             <Route path="/seguimiento" element={<SeguimientoWrapper />} />
             <Route path="/estadisticas" element={<Estadisticas />} />
             <Route path="/alertas" element={<AlertasPlazos />} />

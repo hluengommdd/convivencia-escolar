@@ -1,197 +1,179 @@
 import { useEffect, useState } from 'react'
-import { getCases } from '../api/db'
-import SeguimientoPage from './SeguimientoPage'
-import { formatDate } from '../utils/formatDate'
+import { useParams } from 'react-router-dom'
+
 import ProcesoVisualizer from '../components/ProcesoVisualizer'
-import ControlDePlazos from './ControlDePlazos'
+import DueProcessAccordion from '../components/DueProcessAccordion'
+import CaseDetailsCard from '../components/CaseDetailsCard'
+import InvolucradosList from '../components/InvolucradosList'
+import SeguimientoForm from '../components/SeguimientoForm'
+
 import { useSeguimientos } from '../hooks/useSeguimientos'
-import { Menu, FileText, Clock, List, Plus } from 'lucide-react'
+import { useDueProcess } from '../hooks/useDueProcess'
+import { usePlazosResumen } from '../hooks/usePlazosResumen'
+import { getCase } from '../api/db'
 
 export default function Seguimientos() {
-  const [casos, setCasos] = useState([])
-  const [selectedCaso, setSelectedCaso] = useState(null)
-  const [externalMostrarForm, setExternalMostrarForm] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const { caseId } = useParams()
+  const casoId = caseId || null
+
   const [refreshKey, setRefreshKey] = useState(0)
-  const [visualizerOpen, setVisualizerOpen] = useState(true)
   const doRefresh = () => setRefreshKey(k => k + 1)
 
-    useEffect(() => {
-      async function cargar() {
-        try {
-          setLoading(true)
-          const data = await getCases()
+  const [mostrarForm, setMostrarForm] = useState(false)
+  const [defaultStage, setDefaultStage] = useState(null)
 
-          // SOLO CASOS EN SEGUIMIENTO (EXCLUYE CERRADOS)
-          const enSeguimiento = data.filter(
-            c => c.fields?.Estado && c.fields.Estado !== 'Cerrado'
-          )
+  const [caso, setCaso] = useState(null)
+  const [loadingCaso, setLoadingCaso] = useState(false)
 
-          setCasos(enSeguimiento)
-        } catch (e) {
-          console.error(e)
-        } finally {
-          setLoading(false)
-        }
+  const { data: seguimientos = [], loading: loadingSeg } = useSeguimientos(casoId, refreshKey)
+  const { stages, currentStageKey, completedStageKeys, stageSlaMap } = useDueProcess(casoId, refreshKey)
+  const { row: plazoRow } = usePlazosResumen(casoId, refreshKey)
+
+  // Construir flags para vencimiento
+  const dias = plazoRow?.dias_restantes ?? null
+
+  let isOverdue = false
+  let overdueLabel = null
+
+  if (dias !== null && Number.isFinite(dias)) {
+    if (dias < 0) {
+      isOverdue = true
+      overdueLabel = `Vencido ${Math.abs(dias)} día${Math.abs(dias) === 1 ? '' : 's'}`
+    } else if (dias === 0) {
+      isOverdue = true
+      overdueLabel = 'Vence hoy'
+    } else {
+      isOverdue = false
+      overdueLabel = `Vence en ${dias} día${dias === 1 ? '' : 's'}`
+    }
+  }
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      if (!casoId) { setCaso(null); return }
+      try {
+        setLoadingCaso(true)
+        const c = await getCase(casoId)
+        if (!cancelled) setCaso(c)
+      } catch (e) {
+        console.error(e)
+        if (!cancelled) setCaso(null)
+      } finally {
+        if (!cancelled) setLoadingCaso(false)
       }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [casoId, refreshKey])
 
-      cargar()
-    }, [refreshKey])
-
-    // Seguimientos del caso seleccionado (para el visualizador global)
-    const { data: casoSeguimientos = [], loading: loadingCasoSeg } = useSeguimientos(
-      selectedCaso?.id || null,
-      // re-evaluate when selectedCaso changes or refreshKey
-      selectedCaso ? refreshKey : null
-    )
+  if (!casoId) {
+    return <div className="p-6 text-gray-500">Selecciona un caso desde el sidebar.</div>
+  }
 
   return (
-    <div className="h-full">
-      {/* Grid 2x2: top-left, top-right, bottom-left, bottom-right */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full" style={{ gridTemplateRows: '1fr 1fr' }}>
+    <div className="h-full w-full p-4 sm:p-6 space-y-6">
 
-        {/* Top-left: Casos en Seguimiento */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden h-full flex flex-col min-h-0">
-          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Menu size={18} className="text-blue-600" />
-                <h2 className="text-base font-semibold leading-tight">Casos en Seguimiento</h2>
-              </div>
-              <div className="flex items-center gap-2">
-              </div>
-            </div>
-          </div>
-          <div className="hidden sm:grid grid-cols-12 gap-2 px-4 sm:px-6 py-2 sm:py-3 text-sm font-semibold text-gray-500 border-b leading-tight">
-            <div className="sm:col-span-1">#</div>
-            <div className="sm:col-span-3">Fecha</div>
-            <div className="sm:col-span-4">Estudiante</div>
-            <div className="sm:col-span-2">Tipificación</div>
-            <div className="sm:col-span-2">Estado</div>
-          </div>
-          <div className="flex-1 overflow-auto text-sm">
-            {loading && <p className="p-4 sm:p-6 text-gray-500 text-sm">Cargando casos…</p>}
-            {!loading && (
-              <div className="divide-y divide-gray-100">
-                {casos.map((caso, index) => (
-                  <div
-                    key={caso.id}
-                    onClick={() => { setSelectedCaso(caso); setVisualizerOpen(true); }}
-                    className={`grid grid-cols-1 sm:grid-cols-12 gap-2 px-4 sm:px-6 py-2 sm:py-3 text-sm leading-snug cursor-pointer hover:bg-gray-50
-                        ${selectedCaso?.id === caso.id ? 'bg-slate-50 border-l-2 border-blue-300' : ''}`}
-                  >
-                    <div className="sm:col-span-1 text-gray-400">{index + 1}</div>
-                    <div className="sm:col-span-3">
-                      <p className="font-medium">{formatDate(caso.fields.Fecha_Incidente)}</p>
-                      <p className="text-sm text-gray-400">{caso.fields.Hora_Incidente}</p>
-                    </div>
-                    <div className="sm:col-span-4 font-semibold truncate">{caso.fields.Estudiante_Responsable}</div>
-                    <div className="sm:col-span-2">
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        caso.fields.Tipificacion_Conducta === 'Leve' ? 'bg-green-100 text-green-800'
-                        : caso.fields.Tipificacion_Conducta === 'Grave' ? 'bg-yellow-100 text-yellow-800'
-                        : caso.fields.Tipificacion_Conducta === 'Muy Grave' ? 'bg-purple-100 text-purple-800'
-                        : caso.fields.Tipificacion_Conducta === 'Gravísima' ? 'bg-red-100 text-red-800'
-                        : 'bg-gray-100'}
-                      `}>
-                        {caso.fields.Tipificacion_Conducta}
-                      </span>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">{caso.fields.Estado}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+      {/* ARRIBA: Fases del Debido Proceso */}
+      <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-3 gap-3">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+            Fases del Debido Proceso
+          </h2>
+
+          <button
+            onClick={() => {
+              setDefaultStage(currentStageKey || null)
+              setMostrarForm(true)
+            }}
+            className="px-3 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+          >
+            + Registrar acción
+          </button>
         </div>
 
-        {/* Top-right: Seguimiento del Caso (Resumen + Involucrados) */}
-        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 h-full flex flex-col min-h-0">
+        <ProcesoVisualizer
+          stages={stages}
+          currentStageKey={currentStageKey}
+          completedStageKeys={completedStageKeys}
+          stageSlaMap={stageSlaMap}
+        />
+      </div>
+
+      {/* ABAJO: 2 columnas */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* IZQ: Acordeón por etapa (sin timeline) */}
+        <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 min-h-[420px]">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <FileText size={18} className="text-green-600" />
-              <h3 className="text-base font-semibold leading-tight">Seguimiento del Caso</h3>
-            </div>
-            <div className="flex items-center gap-2">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+              Acciones del Debido Proceso
+            </h3>
+            <div className="text-sm text-gray-500">
+              {loadingSeg ? 'Cargando…' : `${seguimientos.length} acciones`}
             </div>
           </div>
-          <div className="flex-1 overflow-auto text-sm">
-              {selectedCaso ? (
-                <SeguimientoPage
-                  casoId={selectedCaso.id}
-                  onDataChange={doRefresh}
-                  onCaseClosed={() => { setSelectedCaso(null); doRefresh() }}
-                  showHistorial={false}
-                  embedded={true}
-                  hideNewAction={true}
-                  externalMostrarForm={externalMostrarForm}
-                  setExternalMostrarForm={setExternalMostrarForm}
-                />
-              ) : (
-                <div className="text-sm text-gray-500 p-4">Selecciona un caso para ver el seguimiento</div>
-              )}
-          </div>
+
+          <DueProcessAccordion
+            stages={stages}
+            followups={seguimientos}
+            currentStageKey={currentStageKey}
+            onAddActionForStage={(stageKey) => {
+              setDefaultStage(stageKey)
+              setMostrarForm(true)
+            }}
+          />
         </div>
 
-        {/* Bottom-left: Control de Plazos / Seguimientos (lista) */}
-        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 h-full flex flex-col min-h-0">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <Clock size={18} className="text-yellow-500" />
-              <h3 className="text-base font-semibold leading-tight">Control de Plazos / Seguimientos</h3>
-            </div>
-            <div className="flex items-center gap-2">
-              {selectedCaso && (
-                <button
-                  onClick={() => setExternalMostrarForm(true)}
-                  className="ml-2 bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-sm font-semibold rounded flex items-center gap-2"
-                >
-                  <Plus size={14} className="text-white" />
-                  <span className="text-white">Nueva Acción</span>
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="flex-1 overflow-auto text-sm">
-            {selectedCaso ? (
-              <ControlDePlazos casoId={selectedCaso.id} refreshKey={refreshKey} />
-            ) : (
-              <div className="text-sm text-gray-500 p-4">Selecciona un caso para ver las acciones</div>
-            )}
-          </div>
-        </div>
+        {/* DER: Detalles del caso (mock style) */}
+        <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 min-h-[420px]">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">
+            Detalles del Caso
+          </h3>
 
-        {/* Bottom-right: Debido Proceso (visualizador) */}
-        <div id="proceso-visualizer-block" className="bg-white rounded-xl shadow-sm p-4 sm:p-6 h-full flex flex-col min-h-0">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <List size={18} className="text-purple-600" />
-              <h3 className="text-base font-semibold leading-tight">Progreso del Debido Proceso</h3>
-            </div>
-            <div className="text-sm text-gray-600">{casoSeguimientos.length} acciones</div>
-          </div>
-          <div className="flex-1 overflow-auto text-sm">
-            {selectedCaso ? (
-              <ProcesoVisualizer
-                seguimientos={casoSeguimientos || []}
-                fechaInicio={selectedCaso?.fields?.Fecha_Incidente || null}
-                onSelectStep={(followupId) => {
-                  try {
-                    const el = document.getElementById(`seg-${followupId}`)
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                  } catch (e) {
-                    console.debug('scrollTo seg failed', e)
-                  }
-                }}
-              />
-            ) : (
-              <div className="text-sm text-gray-500 p-4">Selecciona un caso para ver el progreso del debido proceso</div>
-            )}
-          </div>
+          {loadingCaso && <p className="text-sm text-gray-500">Cargando caso…</p>}
+
+          {!loadingCaso && caso?.fields && (
+            <CaseDetailsCard
+              caso={caso}
+              isOverdue={isOverdue}
+              overdueLabel={overdueLabel || 'Vencido'}
+              isReincidente={false}
+              involucradosSlot={<InvolucradosList casoId={casoId} readOnly />}
+            />
+          )}
+
+          {!loadingCaso && !caso && (
+            <p className="text-sm text-red-600">No se pudo cargar el caso.</p>
+          )}
         </div>
       </div>
+
+      {/* MODAL: Registrar acción */}
+      {mostrarForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 relative">
+            <button
+              onClick={() => { setMostrarForm(false); setDefaultStage(null) }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-lg font-semibold mb-4">Registrar nueva acción</h2>
+
+            <SeguimientoForm
+              casoId={casoId}
+              defaultProcessStage={defaultStage}
+              onSaved={() => {
+                setMostrarForm(false)
+                setDefaultStage(null)
+                doRefresh()
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

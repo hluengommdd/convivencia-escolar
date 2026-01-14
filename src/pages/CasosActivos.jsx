@@ -134,7 +134,7 @@ export default function CasosActivos() {
         </div>
 
         {/* PANEL DERECHO */}
-        <div className="flex-1 card overflow-hidden flex flex-col">
+        <div className="w-full sm:w-1/2 card overflow-hidden flex flex-col">
           {selectedCaso ? (
             <div className="flex-1 overflow-y-auto">
               <CaseDetailPanel

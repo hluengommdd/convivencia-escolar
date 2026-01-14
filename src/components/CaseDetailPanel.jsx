@@ -5,6 +5,7 @@ import { getInvolucrados } from '../api/db'
 import { useState } from 'react'
 import { useEffect } from 'react'
 import InvolucradosListPlaceholder from './InvolucradosListPlaceholder'
+import CaseStudentHeaderCard from './CaseStudentHeaderCard'
 
 export default function CaseDetailPanel({ caso }) {
   const navigate = useNavigate()
@@ -54,7 +55,7 @@ export default function CaseDetailPanel({ caso }) {
 
   return (
     <div className="bg-white rounded-xl shadow-sm h-full flex flex-col">
-      {/* HEADER */}
+      {/* HEADER: mantener chips de 'Caso Activo' arriba */}
       <div
         className={`px-6 py-4 border-b ${
           caso.fields.Tipificacion_Conducta === 'Leve'
@@ -67,9 +68,7 @@ export default function CaseDetailPanel({ caso }) {
         }`}
       >
         <div className="flex items-center gap-3">
-          <span className="px-3 py-1 text-sm font-semibold bg-white rounded-full">
-            Caso Activo
-          </span>
+          <span className="px-3 py-1 text-sm font-semibold bg-white rounded-full">Caso Activo</span>
 
           <span
             className={`px-3 py-1 rounded-full text-sm font-semibold ${
@@ -88,39 +87,17 @@ export default function CaseDetailPanel({ caso }) {
       </div>
 
       {/* CONTENIDO */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <h1 className="text-2xl font-bold mb-6">
-          {caso.fields.Estudiante_Responsable}
-        </h1>
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {/* NUEVO HEADER DEL ESTUDIANTE (estilo Seguimientos) */}
+        <CaseStudentHeaderCard
+          studentName={caso.fields.Estudiante_Responsable}
+          course={caso.fields.Curso_Incidente || '—'}
+          tipificacion={caso.fields.Tipificacion_Conducta || '—'}
+          estado={caso.fields.Estado || '—'}
+          categoria={caso.fields.Categoria || ''}
+        />
 
-        <div className="mb-6">
-          <h3 className="text-sm font-semibold text-gray-500 mb-1">
-            Curso
-          </h3>
-          <p className="text-lg font-medium">
-            {caso.fields.Curso_Incidente || '—'}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <div>
-            <h3 className="text-sm font-semibold text-gray-500 mb-1">
-              Tipo de falta
-            </h3>
-            <p>{caso.fields.Tipificacion_Conducta}</p>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold text-gray-500 mb-1">
-              Estado
-            </h3>
-            <span className="px-3 py-1 rounded-full text-sm bg-gray-100">
-              {caso.fields.Estado}
-            </span>
-          </div>
-        </div>
-
-        <div className="mb-8">
+        <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold text-gray-500">
               Descripción breve
@@ -148,7 +125,7 @@ export default function CaseDetailPanel({ caso }) {
                 <button
                   onClick={guardarDescripcion}
                   disabled={guardando}
-                  className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50"
+                  className="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
                   <Save size={14} />
                   {guardando ? 'Guardando...' : 'Guardar'}
@@ -156,7 +133,7 @@ export default function CaseDetailPanel({ caso }) {
                 <button
                   onClick={cancelarEdicion}
                   disabled={guardando}
-                  className="flex items-center gap-1 px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 disabled:opacity-50"
+                  className="flex items-center gap-1 px-3 py-2 border rounded-lg hover:bg-gray-50"
                 >
                   <X size={14} />
                   Cancelar
@@ -164,14 +141,13 @@ export default function CaseDetailPanel({ caso }) {
               </div>
             </div>
           ) : (
-            <div className="bg-gray-50 p-4 rounded-lg break-words whitespace-pre-wrap">
+            <p className="text-gray-700 whitespace-pre-wrap">
               {caso.fields.Descripcion || 'Sin descripción'}
-            </div>
+            </p>
           )}
         </div>
 
-        <div className="flex items-center bg-gray-50 p-4 rounded-lg text-gray-600">
-          <Clock size={18} className="mr-3" />
+        <div>
           <span>{caso.fields.Fecha_Incidente}</span>
           <span className="mx-2">·</span>
           <span>{caso.fields.Hora_Incidente}</span>

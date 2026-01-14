@@ -13,9 +13,9 @@ const RESPONSABLES = [
   'Encargado/a Convivencia Escolar',
 ]
 
-export default function SeguimientoForm({ casoId, onSaved }) {
+export default function SeguimientoForm({ casoId, defaultProcessStage = null, onSaved }) {
   const [tipoAccion, setTipoAccion] = useState('')
-  const [etapa, setEtapa] = useState('')
+  const [etapa, setEtapa] = useState(defaultProcessStage || '')
   const [estado, setEstado] = useState('Completada')
   const [responsable, setResponsable] = useState('')
   const [detalle, setDetalle] = useState('')

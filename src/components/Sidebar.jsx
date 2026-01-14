@@ -9,14 +9,18 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  ChevronDown,
 } from 'lucide-react'
 
 // 👇 IMPORTA EL LOGO
 import logoColegio from '../assets/veritas.jpg'
 import { useEffect, useState } from 'react'
+import { getCases } from '../api/db'
 
 export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
   const [collapsed, setCollapsed] = useState(false)
+  const [expandedSeguimientos, setExpandedSeguimientos] = useState(false)
+  const [casesEnSeguimiento, setCasesEnSeguimiento] = useState([])
 
   useEffect(() => {
     try {
@@ -36,6 +40,25 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
   useEffect(() => {
     try { localStorage.setItem('sidebar-collapsed', collapsed ? 'true' : 'false') } catch (e) {}
   }, [collapsed])
+
+  // Cargar casos en seguimiento
+  useEffect(() => {
+    async function cargarCasosEnSeguimiento() {
+      try {
+        const casos = await getCases('En Seguimiento')
+        // Mapear para obtener el nombre del estudiante
+        const casosFormateados = casos.map(caso => ({
+          id: caso.id,
+          nombre: caso.fields.Estudiante_Responsable || 'Sin nombre',
+        }))
+        setCasesEnSeguimiento(casosFormateados)
+      } catch (e) {
+        console.error('Error cargando casos en seguimiento:', e)
+        setCasesEnSeguimiento([])
+      }
+    }
+    cargarCasosEnSeguimiento()
+  }, [])
 
   const linkClass =
     'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200'
@@ -88,12 +111,50 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
           <span className="sidebar-label">Casos Activos</span>
         </NavLink>
 
-        <NavLink to="/seguimientos" className={({ isActive }) =>
-          `${linkClass} ${isActive ? activeClass : inactiveClass}`
-        }>
-          <CheckCircle size={18} />
-          <span className="sidebar-label">Seguimientos</span>
-        </NavLink>
+        {/* Seguimientos con submenu expandible */}
+        <div className="flex flex-col gap-0">
+          <button
+            onClick={() => setExpandedSeguimientos(!expandedSeguimientos)}
+            className={`${linkClass} w-full justify-between ${expandedSeguimientos ? activeClass : inactiveClass}`}
+          >
+            <span className="flex items-center gap-3">
+              <CheckCircle size={18} />
+              <span className="sidebar-label">Seguimientos</span>
+            </span>
+            <ChevronDown 
+              size={16} 
+              className={`transition-transform ${expandedSeguimientos ? 'rotate-180' : ''}`}
+            />
+          </button>
+
+          {/* Submenu de estudiantes */}
+          {expandedSeguimientos && (
+            <div className="ml-4 mt-1 space-y-1 border-l border-gray-200 pl-3">
+              {casesEnSeguimiento.length > 0 ? (
+                casesEnSeguimiento.map(caso => (
+                  <NavLink
+                    key={caso.id}
+                    to={`/seguimientos/${caso.id}`}
+                    className={({ isActive }) =>
+                      `flex items-center gap-2 px-3 py-2 text-xs rounded-lg transition-all ${
+                        isActive 
+                          ? 'bg-red-50 text-red-600 font-medium' 
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`
+                    }
+                  >
+                    <span className="text-gray-400">•</span>
+                    <span className="sidebar-label truncate">{caso.nombre}</span>
+                  </NavLink>
+                ))
+              ) : (
+                <div className="text-xs text-gray-400 px-3 py-2">
+                  No hay casos en seguimiento
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         <NavLink to="/casos-cerrados" className={({ isActive }) =>
           `${linkClass} ${isActive ? activeClass : inactiveClass}`
@@ -149,10 +210,51 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
                 <span className="sidebar-label">Casos Activos</span>
               </NavLink>
 
-              <NavLink to="/seguimientos" className={({ isActive }) => `${linkClass} ${isActive ? activeClass : inactiveClass}`} onClick={onClose}>
-                <CheckCircle size={18} />
-                <span className="sidebar-label">Seguimientos</span>
-              </NavLink>
+              {/* Seguimientos con submenu expandible - Mobile */}
+              <div className="flex flex-col gap-0">
+                <button
+                  onClick={() => setExpandedSeguimientos(!expandedSeguimientos)}
+                  className={`${linkClass} w-full justify-between ${expandedSeguimientos ? activeClass : inactiveClass}`}
+                >
+                  <span className="flex items-center gap-3">
+                    <CheckCircle size={18} />
+                    <span className="sidebar-label">Seguimientos</span>
+                  </span>
+                  <ChevronDown 
+                    size={16} 
+                    className={`transition-transform ${expandedSeguimientos ? 'rotate-180' : ''}`}
+                  />
+                </button>
+
+                {/* Submenu de estudiantes - Mobile */}
+                {expandedSeguimientos && (
+                  <div className="ml-4 mt-1 space-y-1 border-l border-gray-200 pl-3">
+                    {casesEnSeguimiento.length > 0 ? (
+                      casesEnSeguimiento.map(caso => (
+                        <NavLink
+                          key={caso.id}
+                          to={`/seguimientos/${caso.id}`}
+                          className={({ isActive }) =>
+                            `flex items-center gap-2 px-3 py-2 text-xs rounded-lg transition-all ${
+                              isActive 
+                                ? 'bg-red-50 text-red-600 font-medium' 
+                                : 'text-gray-600 hover:bg-gray-50'
+                            }`
+                          }
+                          onClick={onClose}
+                        >
+                          <span className="text-gray-400">•</span>
+                          <span className="sidebar-label truncate">{caso.nombre}</span>
+                        </NavLink>
+                      ))
+                    ) : (
+                      <div className="text-xs text-gray-400 px-3 py-2">
+                        No hay casos en seguimiento
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <NavLink to="/casos-cerrados" className={({ isActive }) => `${linkClass} ${isActive ? activeClass : inactiveClass}`} onClick={onClose}>
                 <Archive size={18} />

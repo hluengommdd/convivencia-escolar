@@ -458,3 +458,35 @@ export async function deleteInvolucrado(id) {
     throw e
   }
 }
+
+/**
+ * Obtener todas las filas de stage_sla
+ */
+export async function getStageSlaRows() {
+  const { data, error } = await withRetry(() =>
+    supabase
+      .from('stage_sla')
+      .select('stage_key, days_to_due')
+      .order('stage_key', { ascending: true })
+  )
+  if (error) throw error
+  return data || []
+}
+
+/**
+ * Obtener resumen de plazos del caso desde v_control_plazos_plus
+ */
+export async function getPlazosResumen(casoId) {
+  const { data, error } = await withRetry(() =>
+    supabase
+      .from('v_control_plazos_plus')
+      .select('fecha_plazo, dias_restantes, estado_plazo')
+      .eq('Caso_ID', casoId)
+      .order('dias_restantes', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+  )
+  if (error) throw error
+  return data || null
+}
+
