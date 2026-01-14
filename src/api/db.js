@@ -474,16 +474,15 @@ export async function getStageSlaRows() {
 }
 
 /**
- * Obtener resumen de plazos del caso desde v_control_plazos_plus
+ * Obtener resumen de plazos del caso desde v_control_plazos_case_resumen
+ * (1 fila por case_id: la más urgente)
  */
 export async function getPlazosResumen(casoId) {
   const { data, error } = await withRetry(() =>
     supabase
-      .from('v_control_plazos_plus')
-      .select('fecha_plazo, dias_restantes, estado_plazo')
-      .eq('Caso_ID', casoId)
-      .order('dias_restantes', { ascending: true })
-      .limit(1)
+      .from('v_control_plazos_case_resumen')
+      .select('fecha_plazo, dias_restantes, alerta_urgencia')
+      .eq('case_id', casoId)
       .maybeSingle()
   )
   if (error) throw error

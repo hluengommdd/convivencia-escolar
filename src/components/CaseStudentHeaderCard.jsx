@@ -29,7 +29,9 @@ export default function CaseStudentHeaderCard({
   course = '—',
   tipificacion = '—',
   estado = '—',
-  categoria = '',
+  falta = '',
+  overdueLabel = null,
+  isOverdue = false,
 }) {
   return (
     <div className="rounded-xl overflow-hidden border shadow-sm">
@@ -54,11 +56,19 @@ export default function CaseStudentHeaderCard({
               <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-900">
                 {estado}
               </span>
+
+              {isOverdue && overdueLabel ? (
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-900">
+                  {overdueLabel}
+                </span>
+              ) : null}
             </div>
 
-            {/* Categoría */}
-            {categoria ? (
-              <div className="mt-3 text-xs text-white/80">Categoría: <span className="text-white font-semibold">{categoria}</span></div>
+            {/* Falta */}
+            {falta ? (
+              <div className="mt-3 text-xs text-white/80">
+                Falta: <span className="text-white font-semibold">{falta}</span>
+              </div>
             ) : null}
           </div>
         </div>
