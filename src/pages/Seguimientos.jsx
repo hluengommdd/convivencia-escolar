@@ -10,7 +10,9 @@ import SeguimientoForm from '../components/SeguimientoForm'
 import { useSeguimientos } from '../hooks/useSeguimientos'
 import { useDueProcess } from '../hooks/useDueProcess'
 import { usePlazosResumen } from '../hooks/usePlazosResumen'
-import { getCase } from '../api/db'
+import { getCase, updateCase, createFollowup } from '../api/db'
+import { emitDataUpdated } from '../utils/refreshBus'
+import { useToast } from '../hooks/useToast'
 
 export default function Seguimientos() {
   const { caseId } = useParams()
@@ -29,13 +31,15 @@ export default function Seguimientos() {
   const { stages, currentStageKey, completedStageKeys, stageSlaMap } = useDueProcess(casoId, refreshKey)
   const { row: plazoRow } = usePlazosResumen(casoId, refreshKey)
 
-  // Construir flags para vencimiento
+  // Construir flags para vencimiento SOLO si el proceso fue iniciado
   const dias = plazoRow?.dias_restantes ?? null
+  const procesoIniciado = Boolean(caso?._supabaseData?.seguimiento_started_at)
 
   let isOverdue = false
   let overdueLabel = null
 
-  if (dias !== null && Number.isFinite(dias)) {
+  // Solo mostrar SLA si el proceso fue iniciado
+  if (procesoIniciado && dias !== null && Number.isFinite(dias)) {
     if (dias < 0) {
       isOverdue = true
       overdueLabel = `Vencido ${Math.abs(dias)} día${Math.abs(dias) === 1 ? '' : 's'}`
@@ -69,6 +73,45 @@ export default function Seguimientos() {
 
   if (!casoId) {
     return <div className="p-6 text-gray-500">Selecciona un caso desde el sidebar.</div>
+  }
+
+  const { push } = useToast()
+
+  // Botón Cerrar (componente pequeño local)
+  function CerrarButton({ casoId, setRefreshKey }) {
+    async function cerrarCaso() {
+      if (!confirm('¿Confirmar cierre del caso?')) return
+
+      try {
+        await updateCase(casoId, { Estado: 'Cerrado' })
+
+        await createFollowup({
+          Caso_ID: casoId,
+          Fecha_Seguimiento: new Date().toISOString().slice(0, 10),
+          Descripcion: 'Cierre formal del caso',
+          Acciones: 'Caso cerrado',
+        })
+
+        push({ type: 'success', title: 'Caso cerrado', message: 'El caso se marcó como cerrado' })
+        alert('Caso cerrado correctamente')
+        emitDataUpdated()
+        setRefreshKey?.(k => k + 1)
+        doRefresh()
+      } catch (e) {
+        console.error(e)
+        push({ type: 'error', title: 'No se pudo cerrar', message: e?.message || 'Intenta de nuevo' })
+        alert('Error al cerrar el caso')
+      }
+    }
+
+    return (
+      <button
+        onClick={cerrarCaso}
+        className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700"
+      >
+        Cerrar caso
+      </button>
+    )
   }
 
   return (
@@ -133,15 +176,30 @@ export default function Seguimientos() {
 
           {loadingCaso && <p className="text-sm text-gray-500">Cargando caso…</p>}
 
-          {!loadingCaso && caso?.fields && (
-            <CaseDetailsCard
-              caso={caso}
-              isOverdue={isOverdue}
-              overdueLabel={overdueLabel || 'Vencido'}
-              isReincidente={false}
-              involucradosSlot={<InvolucradosList casoId={casoId} readOnly />}
-            />
-          )}
+          {!loadingCaso && caso?.fields && (() => {
+            const estadoNorm = (caso?.fields?.Estado ?? "").trim().toLowerCase()
+            const isClosed = estadoNorm === "cerrado"
+            const isPendingStart = !caso._supabaseData?.seguimiento_started_at
+            const showCerrar = !!casoId && !isPendingStart && !isClosed
+
+            return (
+              <CaseDetailsCard
+                caso={caso}
+                isOverdue={isOverdue}
+                overdueLabel={overdueLabel || 'Vencido'}
+                isReincidente={false}
+                isPendingStart={isPendingStart}
+                involucradosSlot={<InvolucradosList casoId={casoId} readOnly />}
+                actionsSlot={
+                  showCerrar ? (
+                    <div className="flex justify-end">
+                      <CerrarButton casoId={casoId} setRefreshKey={setRefreshKey} />
+                    </div>
+                  ) : null
+                }
+              />
+            )
+          })()}
 
           {!loadingCaso && !caso && (
             <p className="text-sm text-red-600">No se pudo cargar el caso.</p>

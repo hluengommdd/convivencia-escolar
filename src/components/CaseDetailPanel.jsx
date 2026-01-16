@@ -1,51 +1,56 @@
 import { Edit2, Save, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { updateCase } from '../api/db'
-import { useEffect, useMemo, useState } from 'react'
+import { updateCase, iniciarDebidoProceso } from '../api/db'
+import { useState } from 'react'
 import InvolucradosListPlaceholder from './InvolucradosListPlaceholder'
 import CaseStudentHeaderCard from './CaseStudentHeaderCard'
-import { usePlazosResumen } from '../hooks/usePlazosResumen'
+import { emitDataUpdated } from '../utils/refreshBus'
 
-function vencimientoLabel(dias) {
-  if (!Number.isFinite(dias)) return null
-  if (dias < 0) return `Vencido ${Math.abs(dias)} día${Math.abs(dias) === 1 ? '' : 's'}`
-  if (dias === 0) return 'Vence hoy'
-  return `Vence en ${dias} día${dias === 1 ? '' : 's'}`
-}
-
-export default function CaseDetailPanel({ caso }) {
+export default function CaseDetailPanel({ caso, setRefreshKey, onDataChange }) {
   const navigate = useNavigate()
   const [editando, setEditando] = useState(false)
   const [descripcion, setDescripcion] = useState(caso.fields.Descripcion || '')
   const [guardando, setGuardando] = useState(false)
 
-  // ✅ plazos (vista resumen por case)
-  const { row: plazoRow } = usePlazosResumen(caso.id, 0)
-  const dias = plazoRow?.dias_restantes ?? null
-
-  const overdueLabel = useMemo(() => vencimientoLabel(dias), [dias])
-  const isOverdue = Number.isFinite(dias) && dias <= 0
-
-  // ✅ lo que pediste: "Falta" (NO etapa)
+  // ✅ En Casos Activos NO mostramos SLA
+  // La falta es el texto de la conducta
   const falta =
     caso.fields.Categoria ||
     caso.fields.Falta ||
     caso.fields.Tipificacion_Conducta ||
     ''
 
-  async function iniciarSeguimiento() {
+  // Calcular días desde creación para información contextual
+  const diasDesdeCreacion = caso.fields.Fecha_Creacion 
+    ? Math.floor((new Date() - new Date(caso.fields.Fecha_Creacion)) / (1000 * 60 * 60 * 24))
+    : null
+
+  async function handleIniciarDebidoProceso(e) {
+    e?.stopPropagation()
     try {
-      await updateCase(caso.id, { Estado: 'En Seguimiento' })
+      await iniciarDebidoProceso(caso.id, 10)
+      
+      // ✅ Emitir evento para refrescar listados
+      emitDataUpdated()
+
+      // ✅ NUEVO: forzar refresh reactivo (listado + paneles que dependan de refreshKey)
+      setRefreshKey?.(k => k + 1)
+      onDataChange?.()
+      
+      // Pequeño delay para dar tiempo a que se actualice la DB
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
       // ✅ navegación correcta
-      navigate(`/seguimientos/${caso.id}`)
-    } catch (e) {
-      console.error(e)
-      alert('Error al iniciar seguimiento')
+      navigate(`/seguimientos?caso=${caso.id}`)
+    } catch (err) {
+      console.error(err)
+      alert(err?.message || 'Error iniciando debido proceso')
     }
   }
 
   async function verSeguimiento() {
-    navigate(`/seguimientos/${caso.id}`)
+    // NO debe iniciar nada, solo navega
+    navigate(`/seguimientos?caso=${caso.id}`)
   }
 
   async function guardarDescripcion() {
@@ -107,15 +112,17 @@ export default function CaseDetailPanel({ caso }) {
 
       {/* CONTENIDO */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {/* ✅ Tarjeta estudiante estilo mock + vencimiento + falta */}
+        {/* Tarjeta estudiante (sin SLA en Casos Activos) */}
         <CaseStudentHeaderCard
           studentName={caso.fields.Estudiante_Responsable}
           course={caso.fields.Curso_Incidente || '—'}
           tipificacion={caso.fields.Tipificacion_Conducta || '—'}
           estado={caso.fields.Estado || '—'}
           falta={falta}
-          isOverdue={isOverdue}
-          overdueLabel={overdueLabel}
+          // En Casos Activos no se muestra SLA
+          isOverdue={false}
+          overdueLabel={null}
+          isPendingStart={!caso._supabaseData?.seguimiento_started_at}
         />
 
         {/* Descripción */}
@@ -174,6 +181,14 @@ export default function CaseDetailPanel({ caso }) {
           <span>{caso.fields.Fecha_Incidente}</span>
           <span className="mx-2">·</span>
           <span>{caso.fields.Hora_Incidente}</span>
+          {diasDesdeCreacion !== null && (
+            <>
+              <span className="mx-2">·</span>
+              <span className="text-gray-500">
+                Creado hace {diasDesdeCreacion} {diasDesdeCreacion === 1 ? 'día' : 'días'}
+              </span>
+            </>
+          )}
         </div>
 
         {/* Involucrados */}
@@ -187,13 +202,16 @@ export default function CaseDetailPanel({ caso }) {
 
       {/* BOTÓN abajo */}
       <div className="p-6 border-t bg-transparent">
-        {estado === 'En Seguimiento' ? (
+        {caso._supabaseData?.seguimiento_started_at ? (
           <button onClick={verSeguimiento} className="btn-primary w-full">
             Ver seguimiento
           </button>
         ) : (
-          <button onClick={iniciarSeguimiento} className="btn-primary w-full">
-            Iniciar seguimiento
+          <button 
+            onClick={handleIniciarDebidoProceso} 
+            className="px-3 py-2 rounded-lg bg-black text-white text-sm font-semibold w-full"
+          >
+            Iniciar debido proceso
           </button>
         )}
       </div>

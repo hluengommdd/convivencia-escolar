@@ -1,9 +1,52 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { getAllControlPlazos, getCases } from '../api/db'
+import { getAllControlAlertas, getCases } from '../api/db'
 import { formatDate } from '../utils/formatDate'
 import { AlertTriangle, Clock, CheckCircle, FileText } from 'lucide-react'
+
+/* =========================
+   Helpers de temporalidad (robustos a timezone)
+========================== */
+
+// Trunca una fecha a medianoche local para evitar desfases por hora/zona
+function toStartOfDay(d) {
+  const x = new Date(d)
+  if (Number.isNaN(x.getTime())) return null
+  x.setHours(0, 0, 0, 0)
+  return x
+}
+
+// Diferencia en días enteros, robusta a timezone (usa medianoche local)
+function diffDays(fromDate, toDate = new Date()) {
+  if (!fromDate) return null
+  const a = toStartOfDay(fromDate)
+  const b = toStartOfDay(toDate)
+  if (!a || !b) return null
+  const ms = b.getTime() - a.getTime()
+  return Math.floor(ms / (1000 * 60 * 60 * 24))
+}
+
+// Texto "hace X días" simple y consistente
+function haceXDiasLabel(dias) {
+  if (dias === null || dias === undefined) return null
+  if (dias <= 0) return 'hoy'
+  if (dias === 1) return 'hace 1 día'
+  return `hace ${dias} días`
+}
+
+// Normaliza estado por si viene con espacios / mayúsculas
+function normalizarEstado(estado) {
+  return String(estado || '').trim().toLowerCase()
+}
+
+// Etiqueta de fuente para auditoría rápida
+function fuenteActividad({ lastAction, createdAt, seguimiento }) {
+  if (lastAction) return 'acción'
+  if (createdAt) return 'creación'
+  if (seguimiento) return 'seguimiento'
+  return null
+}
 
 export default function AlertasPlazos() {
   const navigate = useNavigate()
@@ -18,15 +61,28 @@ export default function AlertasPlazos() {
       try {
         setLoading(true)
         const [controlData, casesData] = await Promise.all([
-          getAllControlPlazos(),
+          getAllControlAlertas(),
           getCases()
         ])
-        // Filtrar alertas: no mostrar alertas vinculadas a casos cerrados
+        
+        // ✅ Filtrar alertas: 
+        // 1. No mostrar casos cerrados
+        // 2. SOLO mostrar casos con seguimiento_started_at (proceso iniciado)
         const controlFiltrado = (controlData || []).filter(s => {
           const casoId = s.fields?.CASOS_ACTIVOS?.[0]
-          if (!casoId) return true
-          const caso = casesData.find(c => c.id === casoId)
-          return caso?.fields?.Estado !== 'Cerrado'
+          if (!casoId) return false
+
+          const caso = (casesData || []).find(c => c.id === casoId)
+          if (!caso) return false
+
+          // Caso cerrado → no mostrar
+          const estado = normalizarEstado(caso?.fields?.Estado)
+          if (estado === 'cerrado') return false
+
+          // ✅ REGLA PRINCIPAL: solo casos con proceso iniciado
+          if (!caso._supabaseData?.seguimiento_started_at) return false
+
+          return true
         })
 
         setSeguimientos(controlFiltrado)
@@ -60,7 +116,7 @@ export default function AlertasPlazos() {
       if (alerta.startsWith('🔴')) grupos.rojos.push(s)
       else if (alerta.startsWith('🟠')) grupos.naranjos.push(s)
       else if (alerta.startsWith('🟡')) grupos.amarillos.push(s)
-      else if (alerta.startsWith('✅')) grupos.verdes.push(s)
+      else if (alerta.startsWith('✅') || alerta.startsWith('🟢')) grupos.verdes.push(s)
       else grupos.sin.push(s)
     })
 
@@ -278,6 +334,15 @@ function Seccion({
           const estudiante = caso?.fields?.Estudiante_Responsable
           const curso = caso?.fields?.Curso_Incidente
 
+          // Temporalidad: última actividad con fallbacks
+          const lastAction = s._supabaseData?.last_action_date
+          const createdAt = caso?._supabaseData?.created_at || caso?.fields?.Fecha_Creacion
+          const seguimiento = s.fields?.Fecha_Seguimiento
+          const refActividad = lastAction || createdAt || seguimiento
+          const diasActividad = diffDays(refActividad)
+          const actividadLabel = haceXDiasLabel(diasActividad)
+          const fuente = fuenteActividad({ lastAction, createdAt, seguimiento })
+
           return (
             <div
               key={s.id}
@@ -299,7 +364,7 @@ function Seccion({
                     </p>
                   )}
                   <p className="text-sm text-gray-700">
-                    <strong>Responsable:</strong> {s.fields?.Responsable || '—'}
+                    <strong>Estado:</strong> {s.fields?.Estado || '—'}
                   </p>
                 </div>
                 
@@ -319,6 +384,19 @@ function Seccion({
                 </div>
               </div>
 
+              {/* Temporalidad (secundaria): NO repetir el SLA (eso va en el badge) */}
+              {actividadLabel && (
+                <p className="text-sm text-gray-600">
+                  {lastAction ? `Última acción ${actividadLabel}` : `Abierto ${actividadLabel}`}
+                  {refActividad && (
+                    <span className="text-xs text-gray-400">
+                      {' '}· {formatDate(refActividad)}
+                      {fuente ? ` · (${fuente})` : ''}
+                    </span>
+                  )}
+                </p>
+              )}
+
               {s.fields?.Detalle && (
                 <p className="text-xs text-gray-600 mb-2 line-clamp-2">
                   {s.fields.Detalle}
@@ -330,7 +408,9 @@ function Seccion({
                   {s.fields?.Tipo_Accion || 'Sin tipo'}
                 </span>
                 <span className="text-xs text-gray-400">
-                  {s.fields?.Fecha_Plazo ? formatDate(s.fields?.Fecha_Plazo) : (s.fields?.Fecha || '—')}
+                  {s.fields?.Fecha_Plazo
+                    ? `Plazo: ${formatDate(s.fields?.Fecha_Plazo)}`
+                    : (s.fields?.Fecha_Seguimiento ? formatDate(s.fields?.Fecha_Seguimiento) : '—')}
                 </span>
               </div>
             </div>

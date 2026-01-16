@@ -347,6 +347,47 @@ export async function getAllControlPlazos() {
   return (data || []).map(mapControlPlazoRow)
 }
 
+// NUEVO: map para filas de v_control_alertas (wrapper indagación)
+function mapControlAlertaRow(row) {
+  return {
+    id: row.id || row.case_id, // id estable
+    fields: {
+      Caso_ID: row.case_id,
+      Tipo_Accion: 'Indagación', // o row.tipo_accion si lo agregas
+      Fecha_Seguimiento: row.fecha || EMPTY,
+
+      // UI usa estos nombres:
+      Etapa_Debido_Proceso: row.etapa_debido_proceso || EMPTY,
+      Dias_Restantes: row.dias_restantes !== null ? row.dias_restantes : null,
+      Alerta_Urgencia: row.alerta_urgencia || calcularAlerta(row.dias_restantes),
+      Fecha_Plazo: row.fecha_plazo || EMPTY,
+
+      // para que el filtro por caso siga funcionando
+      CASOS_ACTIVOS: [row.case_id],
+
+      // extras si los necesitas en pantalla
+      Estado: row.estado_caso || EMPTY,
+      Tipificacion_Conducta: row.tipificacion_conducta || EMPTY,
+      Curso_Incidente: row.curso_incidente || EMPTY,
+      Fecha_Incidente: row.fecha_incidente || EMPTY,
+      Numero_Caso: row.legacy_case_number || EMPTY,
+    },
+    _supabaseData: row,
+  }
+}
+
+// NUEVO: fuente única de alertas (SLA indagación)
+export async function getAllControlAlertas() {
+  const { data, error } = await withRetry(() =>
+    supabase
+      .from('v_control_alertas')
+      .select('*')
+      .order('dias_restantes', { ascending: true })
+  )
+  if (error) throw error
+  return (data || []).map(mapControlAlertaRow)
+}
+
 /**
  * Obtener alertas y control de plazos desde v_control_plazos
  * @returns {Promise<Array>}
@@ -487,5 +528,19 @@ export async function getPlazosResumen(casoId) {
   )
   if (error) throw error
   return data || null
+}
+
+/**
+ * Iniciar debido proceso: setea fechas de inicio/vencimiento y marca como "En Seguimiento"
+ * Usa RPC para consistencia en DB
+ * @param {string} caseId - ID del caso
+ * @param {number} slaDays - Días hábiles para el plazo (default 10)
+ */
+export async function iniciarDebidoProceso(caseId, slaDays = 10) {
+  const { error } = await supabase.rpc('start_due_process', {
+    p_case_id: caseId,
+    p_sla_days: slaDays,
+  })
+  if (error) throw error
 }
 

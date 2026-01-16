@@ -63,7 +63,7 @@ export default function CasosActivos() {
           {/* ENCABEZADO */}
           <div className="hidden sm:grid grid-cols-12 gap-2 px-4 py-2 text-xs font-semibold text-gray-500 border-b">
             <div className="sm:col-span-1">#</div>
-            <div className="sm:col-span-3">Fecha</div>
+            <div className="sm:col-span-3">Fecha de registro</div>
             <div className="sm:col-span-4">Estudiante</div>
             <div className="sm:col-span-2">Tipificación</div>
             <div className="sm:col-span-2">Estado</div>
@@ -140,6 +140,7 @@ export default function CasosActivos() {
               <CaseDetailPanel
                 caso={selectedCaso}
                 onClose={() => setSelectedCaso(null)}
+                setRefreshKey={setRefreshKey}
               />
             </div>
           ) : (

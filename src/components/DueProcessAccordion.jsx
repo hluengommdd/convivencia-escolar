@@ -34,7 +34,16 @@ export default function DueProcessAccordion({
   currentStageKey = null,
   onAddActionForStage,
 }) {
-  const grouped = useMemo(() => groupByStage(followups), [followups])
+  const filteredFollowups = useMemo(() => {
+    return (followups || []).filter((f) => {
+      const ff = f?.fields || {}
+      const text = `${ff.Detalle || ''} ${ff.Descripcion || ''} ${ff.Acciones || ''} ${ff.Observaciones || ''}`
+        .toLowerCase()
+      return !text.includes('inicio automatico')
+    })
+  }, [followups])
+
+  const grouped = useMemo(() => groupByStage(filteredFollowups), [filteredFollowups])
   const [openKey, setOpenKey] = useState(null)
 
   useEffect(() => {

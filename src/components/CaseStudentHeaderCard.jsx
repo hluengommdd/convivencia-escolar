@@ -32,6 +32,7 @@ export default function CaseStudentHeaderCard({
   falta = '',
   overdueLabel = null,
   isOverdue = false,
+  isPendingStart = false,
 }) {
   return (
     <div className="rounded-xl overflow-hidden border shadow-sm">
@@ -53,9 +54,16 @@ export default function CaseStudentHeaderCard({
               <span className={`px-3 py-1 rounded-full text-xs font-semibold ${tipColor(tipificacion)}`}>
                 {tipificacion}
               </span>
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-900">
-                {estado}
-              </span>
+              
+              {isPendingStart ? (
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
+                  Pendiente de iniciar
+                </span>
+              ) : (
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-900">
+                  {estado}
+                </span>
+              )}
 
               {isOverdue && overdueLabel ? (
                 <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-900">
