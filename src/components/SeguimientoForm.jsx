@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react'
-import { createFollowup } from '../api/db'
+import { useEffect, useRef, useState } from 'react'
+import { createFollowup, updateFollowup } from '../api/db'
 import { uploadEvidenceFiles } from '../api/evidence'
 import { useToast } from '../hooks/useToast'
 
@@ -13,17 +13,50 @@ const RESPONSABLES = [
   'Encargado/a Convivencia Escolar',
 ]
 
-export default function SeguimientoForm({ casoId, defaultProcessStage = null, onSaved }) {
+export default function SeguimientoForm({ casoId, defaultProcessStage = null, followup = null, onSaved }) {
+  const isEdit = Boolean(followup?.id)
   const [tipoAccion, setTipoAccion] = useState('')
   const [etapa, setEtapa] = useState(defaultProcessStage || '')
-  const [estado, setEstado] = useState('Completada')
   const [responsable, setResponsable] = useState('')
   const [detalle, setDetalle] = useState('')
   const [observaciones, setObservaciones] = useState('')
   const [files, setFiles] = useState([])
+  const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10))
   const [loading, setLoading] = useState(false)
   const fileInputRef = useRef(null)
   const { push } = useToast()
+
+  // Pre-cargar datos cuando se edita
+  useEffect(() => {
+    if (!followup) return
+    const ff = followup.fields || {}
+    setTipoAccion(ff.Tipo_Accion || ff.Acciones || '')
+    setEtapa(ff.Etapa_Debido_Proceso || defaultProcessStage || '')
+    setResponsable(ff.Responsable || '')
+    setDetalle(ff.Detalle || ff.Descripcion || '')
+    setObservaciones(ff.Observaciones || '')
+    setFecha(ff.Fecha || ff.Fecha_Seguimiento || new Date().toISOString().slice(0, 10))
+  }, [followup, defaultProcessStage])
+
+  // Reset al salir de edición
+  useEffect(() => {
+    if (followup) return
+    setTipoAccion('')
+    setEtapa(defaultProcessStage || '')
+    setResponsable('')
+    setDetalle('')
+    setObservaciones('')
+    setFiles([])
+    setFecha(new Date().toISOString().slice(0, 10))
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }, [followup, defaultProcessStage])
+
+  // Si cambia la etapa por defecto y no estamos editando, actualizar el select
+  useEffect(() => {
+    if (!isEdit && defaultProcessStage) {
+      setEtapa(defaultProcessStage)
+    }
+  }, [defaultProcessStage, isEdit])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -35,44 +68,60 @@ export default function SeguimientoForm({ casoId, defaultProcessStage = null, on
     try {
       setLoading(true)
 
-      // 📅 Fecha base (registro)
-      const hoy = new Date()
-      const fechaISO = hoy.toISOString().slice(0, 10)
+      // 📅 Fecha base (registro/edición)
+      const fechaISO = fecha || new Date().toISOString().slice(0, 10)
 
-      // Crear seguimiento en Supabase
-      const followup = await createFollowup({
-        Caso_ID: casoId,
-        Fecha_Seguimiento: fechaISO,
-        Tipo_Accion: tipoAccion,
-        Etapa_Debido_Proceso: etapa,
-        Descripcion: detalle || tipoAccion,
-        Acciones: responsable || 'Por asignar',
-        Responsable: responsable || 'Por asignar',
-        Estado_Etapa: estado,
-        Detalle: detalle,
-        Observaciones: observaciones,
-      })
+      let savedFollowup = null
+
+      if (isEdit) {
+        savedFollowup = await updateFollowup(followup.id, {
+          Caso_ID: casoId,
+          Fecha_Seguimiento: fechaISO,
+          Tipo_Accion: tipoAccion,
+          Etapa_Debido_Proceso: etapa,
+          Descripcion: detalle || tipoAccion,
+          Acciones: responsable || 'Por asignar',
+          Responsable: responsable || 'Por asignar',
+          Detalle: detalle,
+          Observaciones: observaciones,
+        })
+      } else {
+        savedFollowup = await createFollowup({
+          Caso_ID: casoId,
+          Fecha_Seguimiento: fechaISO,
+          Tipo_Accion: tipoAccion,
+          Etapa_Debido_Proceso: etapa,
+          Descripcion: detalle || tipoAccion,
+          Acciones: responsable || 'Por asignar',
+          Responsable: responsable || 'Por asignar',
+          // Estado_Etapa ya no se envía - siempre es "Completada" por defecto en db.js
+          Detalle: detalle,
+          Observaciones: observaciones,
+        })
+      }
 
       if (files.length) {
-        await uploadEvidenceFiles({ caseId: casoId, followupId: followup.id, files })
+        await uploadEvidenceFiles({ caseId: casoId, followupId: savedFollowup.id, files })
       }
 
       push({
         type: 'success',
-        title: 'Seguimiento guardado',
+        title: isEdit ? 'Seguimiento actualizado' : 'Seguimiento guardado',
         message: files.length ? 'Acción y evidencias registradas' : 'Acción registrada',
       })
       onSaved?.()
 
-      // 🔄 Reset form
-      setTipoAccion('')
-      setEtapa('')
-      setEstado('Completada')
-      setResponsable('')
-      setDetalle('')
-      setObservaciones('')
-      setFiles([])
-      if (fileInputRef.current) fileInputRef.current.value = ''
+      // 🔄 Reset form (para modo creación)
+      if (!isEdit) {
+        setTipoAccion('')
+        setEtapa('')
+        setResponsable('')
+        setDetalle('')
+        setObservaciones('')
+        setFiles([])
+        setFecha(new Date().toISOString().slice(0, 10))
+        if (fileInputRef.current) fileInputRef.current.value = ''
+      }
     } catch (e) {
       console.error(e)
       push({ type: 'error', title: 'Error al guardar', message: e?.message || 'Intenta nuevamente' })
@@ -114,15 +163,6 @@ export default function SeguimientoForm({ casoId, defaultProcessStage = null, on
         <option>6. Resolución y Sanciones</option>
         <option>7. Apelación/Recursos</option>
         <option>8. Seguimiento</option>
-      </select>
-
-      <select
-        value={estado}
-        onChange={e => setEstado(e.target.value)}
-        className="w-full border border-gray-300 bg-white rounded-lg p-3 text-gray-900"
-      >
-        <option>En Proceso</option>
-        <option>Completada</option>
       </select>
 
       <select
@@ -175,7 +215,7 @@ export default function SeguimientoForm({ casoId, defaultProcessStage = null, on
         disabled={loading}
         className="btn-primary w-full disabled:opacity-50"
       >
-        {loading ? 'Guardando…' : 'Registrar acción'}
+        {loading ? 'Guardando…' : isEdit ? 'Actualizar acción' : 'Registrar acción'}
       </button>
     </form>
   )

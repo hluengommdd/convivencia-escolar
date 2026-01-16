@@ -33,6 +33,7 @@ export default function DueProcessAccordion({
   followups = [],
   currentStageKey = null,
   onAddActionForStage,
+  onEditAction = null,
 }) {
   const filteredFollowups = useMemo(() => {
     return (followups || []).filter((f) => {
@@ -114,10 +115,26 @@ export default function DueProcessAccordion({
                                   {ff.Detalle}
                                 </div>
                               )}
+                              {ff.Observaciones && (
+                                <div className="text-xs text-gray-600 mt-2 border-l-2 border-gray-200 pl-2 whitespace-pre-wrap">
+                                  Observaciones: {ff.Observaciones}
+                                </div>
+                              )}
                             </div>
-                            <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-700">
-                              {ff.Estado_Etapa || '—'}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-700">
+                                {ff.Estado_Etapa || '—'}
+                              </span>
+                              {onEditAction && (
+                                <button
+                                  type="button"
+                                  onClick={() => onEditAction(f)}
+                                  className="text-xs text-gray-600 hover:text-gray-800 font-semibold underline"
+                                >
+                                  ✏️ Editar
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )

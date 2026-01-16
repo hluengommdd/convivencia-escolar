@@ -31,42 +31,43 @@ export default function CaseDetailPanel({ caso, setRefreshKey, onDataChange }) {
       console.log('🚀 Iniciando debido proceso para caso:', caso.id)
       console.log('Estado actual:', caso.fields?.Estado)
       
+      // ✅ Ejecutar RPC
       await iniciarDebidoProceso(caso.id, 10)
-      
-      console.log('✅ Debido proceso iniciado correctamente en BD')
+      console.log('✅ RPC start_due_process ejecutado correctamente')
       
       // ✅ Emitir evento para refrescar listados GLOBALMENTE
+      console.log('🔔 Emitiendo evento de actualización global')
       emitDataUpdated()
 
-      // ✅ NUEVO: forzar refresh reactivo (listado + paneles que dependan de refreshKey)
+      // ✅ Forzar refresh reactivo
       setRefreshKey?.(k => k + 1)
       onDataChange?.()
       
-      // ⏳ Delay para que Supabase actualice
-      console.log('⏳ Esperando 2 segundos para que Supabase actualice...')
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // ⏳ IMPORTANTE: Delay para que Supabase procese el cambio
+      console.log('⏳ Esperando 3 segundos para que Supabase actualice...')
+      await new Promise(resolve => setTimeout(resolve, 3000))
       
-      // ✅ Refrescar el caso local para actualizar el estado mostrado ANTES de navegar
-      console.log('🔄 Refrescando caso antes de navegar...')
+      // ✅ Refrescar el caso SIN caché
+      console.log('🔄 Refrescando caso desde Supabase SIN caché...')
       try {
         const casoActualizado = await getCase(caso.id)
         if (casoActualizado) {
-          console.log('✅ Estado después de actualizar:', casoActualizado.fields?.Estado)
+          console.log('✅ Caso refrescado:')
+          console.log('   - Estado nuevo:', casoActualizado.fields?.Estado)
+          console.log('   - ID:', casoActualizado.id)
         }
       } catch (refreshErr) {
-        console.warn('⚠️ No se pudo refrescar el caso localmente:', refreshErr)
+        console.warn('⚠️ Warning al refrescar (pero continuamos):', refreshErr.message)
       }
       
-      // ✅ Navegar - Seguimientos harará su propio getCase() cuando arrive
-      console.log('📍 Navegando a seguimientos con caso_id:', caso.id)
+      // ✅ Navegar a Seguimientos
+      console.log('📍 Navegando a /seguimientos/' + caso.id)
       navigate(`/seguimientos/${caso.id}`)
       
-      // ⏳ Un delay más DESPUÉS de navegar para que Seguimientos.jsx tenga tiempo de cargar
-      await new Promise(resolve => setTimeout(resolve, 500))
     } catch (err) {
-      console.error('❌ Error iniciando debido proceso:', err)
+      console.error('❌ Error crítico en handleIniciarDebidoProceso:', err)
       const errorMsg = err?.message || 'Error iniciando debido proceso'
-      alert(`Error: ${errorMsg}\n\nAsegúrate de que:\n1. El caso exista en la base de datos\n2. La RPC start_due_process esté creada\n3. Tengas permisos para ejecutar la operación`)
+      alert(`Error: ${errorMsg}`)
     }
   }
 

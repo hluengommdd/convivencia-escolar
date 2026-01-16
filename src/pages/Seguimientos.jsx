@@ -27,6 +27,7 @@ export default function Seguimientos() {
 
   const [mostrarForm, setMostrarForm] = useState(false)
   const [defaultStage, setDefaultStage] = useState(null)
+  const [followupEnEdicion, setFollowupEnEdicion] = useState(null)
 
   const [caso, setCaso] = useState(null)
   const [loadingCaso, setLoadingCaso] = useState(false)
@@ -59,18 +60,23 @@ export default function Seguimientos() {
   useEffect(() => {
     let cancelled = false
     async function load() {
-      if (!casoId) { setCaso(null); return }
+      if (!casoId) { 
+        console.log('ℹ️ No hay casoId, limpiando caso')
+        setCaso(null)
+        return 
+      }
       try {
         setLoadingCaso(true)
+        console.log('🔄 Cargando caso desde Supabase:', casoId)
         const c = await getCase(casoId)
         if (!cancelled) {
           setCaso(c)
           console.log('✅ Caso cargado en Seguimientos:', {
             id: c?.id,
             estado: c?.fields?.Estado,
-            estado_lowercase: (c?.fields?.Estado || '').toLowerCase(),
+            estado_minusculas: (c?.fields?.Estado || '').toLowerCase(),
+            status_bd: c?._supabaseData?.status,
             seguimiento_started_at: c?._supabaseData?.seguimiento_started_at,
-            statusDB: c?._supabaseData?.status,
           })
         }
       } catch (e) {
@@ -96,14 +102,19 @@ export default function Seguimientos() {
       if (!confirm('¿Confirmar cierre del caso?')) return
 
       try {
-        await updateCase(casoId, { Estado: 'Cerrado' })
-
+        // 1) Registrar acción de cierre ANTES de cambiar estado, para no chocar con RLS de casos cerrados
         await createFollowup({
           Caso_ID: casoId,
           Fecha_Seguimiento: new Date().toISOString().slice(0, 10),
+          Tipo_Accion: 'Seguimiento',
+          Etapa_Debido_Proceso: '8. Seguimiento',
           Descripcion: 'Cierre formal del caso',
-          Acciones: 'Caso cerrado',
+          Detalle: 'Caso cerrado - finalización del debido proceso',
+          Responsable: 'Sistema',
         })
+
+        // 2) Cambiar estado a Cerrado
+        await updateCase(casoId, { Estado: 'Cerrado' })
 
         push({ type: 'success', title: 'Caso cerrado', message: 'El caso se marcó como cerrado' })
         alert('Caso cerrado correctamente')
@@ -140,6 +151,7 @@ export default function Seguimientos() {
           <button
             onClick={() => {
               setDefaultStage(currentStageKey || null)
+              setFollowupEnEdicion(null)
               setMostrarForm(true)
             }}
             className="px-3 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold"
@@ -176,8 +188,14 @@ export default function Seguimientos() {
             currentStageKey={currentStageKey}
             onAddActionForStage={(stageKey) => {
               setDefaultStage(stageKey)
+              setFollowupEnEdicion(null)
               setMostrarForm(true)
             }}
+             onEditAction={(followup) => {
+               setFollowupEnEdicion(followup)
+               setDefaultStage(followup?.fields?.Etapa_Debido_Proceso || null)
+               setMostrarForm(true)
+             }}
           />
         </div>
 
@@ -209,6 +227,7 @@ export default function Seguimientos() {
             return (
               <CaseDetailsCard
                 caso={caso}
+                seguimientos={seguimientos}
                 isOverdue={isOverdue}
                 overdueLabel={overdueLabel || 'Vencido'}
                 isReincidente={false}
@@ -236,20 +255,28 @@ export default function Seguimientos() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 relative">
             <button
-              onClick={() => { setMostrarForm(false); setDefaultStage(null) }}
+              onClick={() => {
+                setMostrarForm(false)
+                setDefaultStage(null)
+                setFollowupEnEdicion(null)
+              }}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
             >
               ✕
             </button>
 
-            <h2 className="text-lg font-semibold mb-4">Registrar nueva acción</h2>
+            <h2 className="text-lg font-semibold mb-4">
+              {followupEnEdicion ? 'Editar acción' : 'Registrar nueva acción'}
+            </h2>
 
             <SeguimientoForm
               casoId={casoId}
               defaultProcessStage={defaultStage}
+              followup={followupEnEdicion}
               onSaved={() => {
                 setMostrarForm(false)
                 setDefaultStage(null)
+                setFollowupEnEdicion(null)
                 doRefresh()
               }}
             />

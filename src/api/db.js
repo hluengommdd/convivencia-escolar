@@ -99,7 +99,7 @@ function mapFollowupRow(row) {
       Detalle: row.detail || EMPTY,
       Observaciones: row.observations || EMPTY,
       Descripcion: row.description || EMPTY,
-      Acciones: row.process_stage || EMPTY,
+      Acciones: row.action_type || row.description || EMPTY, // ✅ FIX: Mostrar tipo de acción o descripción
     },
     _supabaseData: row,
   }
@@ -305,13 +305,15 @@ export async function createFollowup(fields) {
 
     const actionDate = fields.Fecha_Seguimiento || new Date().toISOString().split('T')[0]
     const actionType = fields.Tipo_Accion || fields.Acciones || 'Seguimiento'
-    const processStage = fields.Etapa_Debido_Proceso || 'Seguimiento' // ✅ Valor por defecto
+    const processStage = fields.Etapa_Debido_Proceso || 'Seguimiento'
+    const stageStatus = 'Completada' // ✅ SIEMPRE Completada - si registras es porque ya lo hiciste
 
     console.log('📝 Creando followup con:', {
       case_id: fields.Caso_ID,
       action_date: actionDate,
       action_type: actionType,
       process_stage: processStage,
+      stage_status: stageStatus,
     })
 
     // Construir objeto con los campos requeridos
@@ -320,6 +322,7 @@ export async function createFollowup(fields) {
       action_date: actionDate,
       action_type: actionType,
       process_stage: processStage, // ✅ Campo requerido (NOT NULL en Supabase)
+      stage_status: stageStatus, // ✅ NUEVO: Campo requerido (NOT NULL en Supabase)
     }
 
     // Agregar campos opcionales solo si tienen valor
@@ -356,6 +359,56 @@ export async function createFollowup(fields) {
     return mapFollowupRow(data)
   } catch (error) {
     console.error('Error creating followup:', error)
+    throw error
+  }
+}
+
+/**
+ * Actualizar un seguimiento existente
+ * @param {string} id - ID del seguimiento (case_followups)
+ * @param {Object} fields - Campos estilo Airtable
+ * @returns {Promise<Object>}
+ */
+export async function updateFollowup(id, fields = {}) {
+  try {
+    if (!id) {
+      throw new Error('Se requiere id de seguimiento')
+    }
+
+    // Mantener fecha previa si no se envía
+    const actionDate = fields.Fecha_Seguimiento || fields.Fecha || undefined
+    const payload = {}
+
+    if (fields.Caso_ID) payload.case_id = fields.Caso_ID
+    if (actionDate) payload.action_date = actionDate
+    if (fields.Tipo_Accion || fields.Acciones) {
+      payload.action_type = fields.Tipo_Accion || fields.Acciones
+    }
+    if (fields.Etapa_Debido_Proceso) payload.process_stage = fields.Etapa_Debido_Proceso
+
+    // Siempre dejamos la etapa como completada si se edita
+    payload.stage_status = fields.Estado_Etapa || 'Completada'
+
+    if (fields.Detalle || fields.Descripcion) {
+      payload.detail = fields.Detalle || fields.Descripcion
+    }
+    if (fields.Descripcion) payload.description = fields.Descripcion
+    if (fields.Responsable) payload.responsible = fields.Responsable
+    if (fields.Observaciones) payload.observations = fields.Observaciones
+
+    const { data, error } = await withRetry(() =>
+      supabase
+        .from('case_followups')
+        .update(payload)
+        .eq('id', id)
+        .select()
+        .single()
+    )
+
+    if (error) throw error
+    return mapFollowupRow(data)
+  } catch (error) {
+    console.error('Error updating followup:', error)
     throw error
   }
 }
