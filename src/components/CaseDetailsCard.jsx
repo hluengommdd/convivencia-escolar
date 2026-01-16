@@ -165,14 +165,12 @@ export default function CaseDetailsCard({
           )}
         </div>
       </div>
-
       {/* Footer acciones */}
-      {actionsSlot ? (
+       {actionsSlot ? (
         <div className="border-t px-4 py-3 bg-white">
           {actionsSlot}
         </div>
       ) : null}
     </div>
   )
-}
 }
