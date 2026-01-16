@@ -149,10 +149,8 @@ export default function SeguimientoPage({
             <button
               onClick={async () => {
                 try {
-                  const [{ pdf }, { default: InformeCasoDocument }] = await Promise.all([
-                    import('@react-pdf/renderer'),
-                    import('../components/InformeCasoDocument'),
-                  ])
+                  const { pdf } = await import('@react-pdf/renderer')
+                  const { default: InformeCasoDocument } = await import('../components/InformeCasoDocument.jsx')
 
                   const doc = (
                     <InformeCasoDocument
@@ -172,9 +170,8 @@ export default function SeguimientoPage({
                   URL.revokeObjectURL(url)
                   push({ type: 'success', title: 'PDF listo', message: 'Informe generado' })
                 } catch (e) {
-                  console.error(e)
+                  console.error('Error generando PDF:', e)
                   push({ type: 'error', title: 'Error al generar PDF', message: e?.message || 'Intenta de nuevo' })
-                  alert('Error al generar PDF')
                 }
               }}
               className="btn-primary bg-blue-600 hover:bg-blue-700 px-4 py-2"

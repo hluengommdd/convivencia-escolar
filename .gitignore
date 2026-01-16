@@ -28,3 +28,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Temporary files
+temp_query.js
+temp_query.mjs
+test_alertas.mjs
