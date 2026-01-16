@@ -303,28 +303,56 @@ export async function createFollowup(fields) {
       throw new Error('Se requiere Caso_ID para crear seguimiento')
     }
 
+    const actionDate = fields.Fecha_Seguimiento || new Date().toISOString().split('T')[0]
+    const actionType = fields.Tipo_Accion || fields.Acciones || 'Seguimiento'
+    const processStage = fields.Etapa_Debido_Proceso || 'Seguimiento' // ✅ Valor por defecto
+
+    console.log('📝 Creando followup con:', {
+      case_id: fields.Caso_ID,
+      action_date: actionDate,
+      action_type: actionType,
+      process_stage: processStage,
+    })
+
+    // Construir objeto con los campos requeridos
+    const payload = {
+      case_id: fields.Caso_ID,
+      action_date: actionDate,
+      action_type: actionType,
+      process_stage: processStage, // ✅ Campo requerido (NOT NULL en Supabase)
+    }
+
+    // Agregar campos opcionales solo si tienen valor
+    if (fields.Detalle || fields.Descripcion) {
+      payload.detail = fields.Detalle || fields.Descripcion
+    }
+    if (fields.Descripcion) {
+      payload.description = fields.Descripcion
+    }
+    if (fields.Responsable) {
+      payload.responsible = fields.Responsable
+    }
+    if (fields.Observaciones) {
+      payload.observations = fields.Observaciones
+    }
+
+    console.log('📦 Payload final:', payload)
+
     const { data, error } = await withRetry(() =>
       supabase
         .from('case_followups')
-        .insert([
-          {
-            case_id: fields.Caso_ID,
-            action_date: fields.Fecha_Seguimiento || new Date().toISOString().split('T')[0],
-            action_type: fields.Tipo_Accion || 'Seguimiento',
-            process_stage: fields.Etapa_Debido_Proceso || '',
-            detail: fields.Detalle || fields.Descripcion || '',
-            responsible: fields.Responsable || fields.Acciones || '',
-            stage_status: fields.Estado_Etapa || 'Completada',
-            observations: fields.Observaciones || '',
-            description: fields.Descripcion || '',
-          },
-        ])
+        .insert([payload])
         .select()
         .single()
     )
 
-    if (error) throw error
+    if (error) {
+      console.error('❌ Error en Supabase:', error)
+      console.error('📦 Payload que causó el error:', payload)
+      throw error
+    }
 
+    console.log('✅ Followup creado exitosamente:', data)
     return mapFollowupRow(data)
   } catch (error) {
     console.error('Error creating followup:', error)
@@ -537,10 +565,28 @@ export async function getPlazosResumen(casoId) {
  * @param {number} slaDays - Días hábiles para el plazo (default 10)
  */
 export async function iniciarDebidoProceso(caseId, slaDays = 10) {
-  const { error } = await supabase.rpc('start_due_process', {
-    p_case_id: caseId,
-    p_sla_days: slaDays,
-  })
-  if (error) throw error
+  try {
+    if (!caseId) {
+      throw new Error('Se requiere caseId para iniciar debido proceso')
+    }
+
+    console.log('🚀 Iniciando debido proceso:', { caseId, slaDays })
+
+    const { data, error } = await supabase.rpc('start_due_process', {
+      p_case_id: caseId,
+      p_sla_days: slaDays,
+    })
+
+    if (error) {
+      console.error('❌ Error en RPC start_due_process:', error)
+      throw error
+    }
+
+    console.log('✅ Debido proceso iniciado:', data)
+    return data
+  } catch (err) {
+    console.error('Error en iniciarDebidoProceso:', err)
+    throw err
+  }
 }
 

@@ -55,6 +55,36 @@ npm run build
 - Uso diario por **Encargado/a de Convivencia** y dupla psicosocial para registrar incidentes y acciones.[8][1]
 - Uso periódico por **equipo directivo** para monitorear tiempos de respuesta, reincidencia y carga de trabajo, y orientar ajustes al Reglamento de Convivencia y protocolos.[8][5]
 
+---
+
+## 🚨 Mantenimiento y Corrección de Datos
+
+### Documentos de Corrección (2026-01-16)
+
+Se identificaron y solucionaron **6 problemas críticos** en los datos de Supabase que afectaban el cálculo de plazos, integridad de datos y experiencia de usuario.
+
+🎯 **Punto de entrada:** [INDEX_CORRECCION_DATOS.md](./docs/INDEX_CORRECCION_DATOS.md) - Índice completo de documentación
+
+📄 **Documentos clave:**
+- **[RESUMEN_CORRECCION_DATOS.md](./docs/RESUMEN_CORRECCION_DATOS.md)** ⭐ Análisis completo y resumen ejecutivo
+- **[CHECKLIST_EJECUCION.md](./docs/CHECKLIST_EJECUCION.md)** ⭐ Lista de verificación paso a paso (30-40 min)
+- **[FIX_DATOS_SUPABASE.sql](./docs/FIX_DATOS_SUPABASE.sql)** ⭐⭐⭐ Script SQL con todas las correcciones
+- **[VERIFICACION_INTEGRIDAD.sql](./docs/VERIFICACION_INTEGRIDAD.sql)** ⭐⭐ Script de verificación antes/después
+- **[GUIA_CORRECCION_DATOS.md](./docs/GUIA_CORRECCION_DATOS.md)** ⭐⭐ Guía técnica detallada
+
+**Problemas identificados y solucionados:**
+| # | Problema | Severidad | Impacto |
+|---|----------|-----------|---------|
+| 1 | `stage_sla` incompleto (etapas 3 y 4) | 🔴 Alta | Plazos no se calculan |
+| 2 | Seguimientos automáticos duplicados | 🟠 Media | Timeline confuso (~15 casos) |
+| 3 | Seguimientos Sistema repetidos | 🟠 Media | Datos duplicados (~10 casos) |
+| 4 | Casos cerrados sin `closed_at` | 🟡 Baja | Inconsistencia (~20 casos) |
+| 5 | Due dates no calculados | 🔴 Alta | No aparecen en alertas (~5 casos) |
+| 6 | Followups sin `due_date` correcto | 🟠 Media | Control de plazos inútil (~120 registros) |
+
+**Estado:** ✅ Documentación completa | ⏳ Pendiente ejecución
+
+---
 
 ****
 # React + Vite

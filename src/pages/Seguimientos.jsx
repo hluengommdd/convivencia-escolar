@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 
 import ProcesoVisualizer from '../components/ProcesoVisualizer'
 import DueProcessAccordion from '../components/DueProcessAccordion'
@@ -15,8 +15,12 @@ import { emitDataUpdated } from '../utils/refreshBus'
 import { useToast } from '../hooks/useToast'
 
 export default function Seguimientos() {
-  const { caseId } = useParams()
-  const casoId = caseId || null
+  const { caseId: urlCaseId } = useParams()
+  const [searchParams] = useSearchParams()
+  const queryCaseId = searchParams.get('caso')
+  
+  // Usar query param si existe, si no usar URL param
+  const casoId = queryCaseId || urlCaseId || null
 
   const [refreshKey, setRefreshKey] = useState(0)
   const doRefresh = () => setRefreshKey(k => k + 1)
@@ -59,9 +63,18 @@ export default function Seguimientos() {
       try {
         setLoadingCaso(true)
         const c = await getCase(casoId)
-        if (!cancelled) setCaso(c)
+        if (!cancelled) {
+          setCaso(c)
+          console.log('✅ Caso cargado en Seguimientos:', {
+            id: c?.id,
+            estado: c?.fields?.Estado,
+            estado_lowercase: (c?.fields?.Estado || '').toLowerCase(),
+            seguimiento_started_at: c?._supabaseData?.seguimiento_started_at,
+            statusDB: c?._supabaseData?.status,
+          })
+        }
       } catch (e) {
-        console.error(e)
+        console.error('❌ Error cargando caso:', e)
         if (!cancelled) setCaso(null)
       } finally {
         if (!cancelled) setLoadingCaso(false)
@@ -107,9 +120,9 @@ export default function Seguimientos() {
     return (
       <button
         onClick={cerrarCaso}
-        className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700"
+        className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition"
       >
-        Cerrar caso
+        Cierre de caso
       </button>
     )
   }
@@ -143,8 +156,8 @@ export default function Seguimientos() {
         />
       </div>
 
-      {/* ABAJO: 2 columnas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* ABAJO: 2 columnas - responsive */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 auto-rows-max lg:auto-rows-auto">
 
         {/* IZQ: Acordeón por etapa (sin timeline) */}
         <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 min-h-[420px]">
@@ -177,10 +190,21 @@ export default function Seguimientos() {
           {loadingCaso && <p className="text-sm text-gray-500">Cargando caso…</p>}
 
           {!loadingCaso && caso?.fields && (() => {
-            const estadoNorm = (caso?.fields?.Estado ?? "").trim().toLowerCase()
+            const estado = (caso?.fields?.Estado ?? "").trim()
+            const estadoNorm = estado.toLowerCase()
             const isClosed = estadoNorm === "cerrado"
-            const isPendingStart = !caso._supabaseData?.seguimiento_started_at
-            const showCerrar = !!casoId && !isPendingStart && !isClosed
+            // Mostrar botón si el caso está en "En Seguimiento" (independiente de seguimiento_started_at)
+            const isEnSeguimiento = estadoNorm === "en seguimiento"
+            const showCerrar = !!casoId && isEnSeguimiento && !isClosed
+
+            console.log('🔍 Debug botón Cierre de caso:', {
+              casoId,
+              estado,
+              estadoNorm,
+              isEnSeguimiento,
+              isClosed,
+              showCerrar,
+            })
 
             return (
               <CaseDetailsCard
@@ -188,7 +212,7 @@ export default function Seguimientos() {
                 isOverdue={isOverdue}
                 overdueLabel={overdueLabel || 'Vencido'}
                 isReincidente={false}
-                isPendingStart={isPendingStart}
+                isPendingStart={false}
                 involucradosSlot={<InvolucradosList casoId={casoId} readOnly />}
                 actionsSlot={
                   showCerrar ? (

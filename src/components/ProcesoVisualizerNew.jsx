@@ -7,55 +7,63 @@ export default function ProcesoVisualizer({
   const completedSet = new Set(completedStageKeys)
 
   return (
-    <div className="flex flex-wrap gap-2">
-      {stages.map((stageKey, index) => {
-        const isCompleted = completedSet.has(stageKey)
-        const isCurrent = stageKey === currentStageKey
-        const sladays = stageSlaMap?.[stageKey] ?? null
+    <div className="w-full overflow-x-auto">
+      <div className="flex gap-1 pb-4 min-w-max sm:flex-wrap">
+        {stages.map((stageKey, index) => {
+          const isCompleted = completedSet.has(stageKey)
+          const isCurrent = stageKey === currentStageKey
+          const sladays = stageSlaMap?.[stageKey] ?? null
 
-        const stageNum = index + 1
-        const stageNameRaw = stageKey.split('.')[1]?.trim() || stageKey
-        const stageName = stageNameRaw.length > 18 ? stageNameRaw.slice(0, 18) + '…' : stageNameRaw
+          const stageNum = index + 1
+          const stageNameRaw = stageKey.split('.')[1]?.trim() || stageKey
+          const stageName = stageNameRaw.length > 16 ? stageNameRaw.slice(0, 16) + '…' : stageNameRaw
 
-        let bgClass, textClass, borderClass
-        if (isCompleted) {
-          bgClass = 'bg-emerald-50'
-          textClass = 'text-emerald-800'
-          borderClass = 'border-emerald-200'
-        } else if (isCurrent) {
-          bgClass = 'bg-blue-50'
-          textClass = 'text-blue-800'
-          borderClass = 'border-blue-300'
-        } else {
-          bgClass = 'bg-gray-50'
-          textClass = 'text-gray-700'
-          borderClass = 'border-gray-200'
-        }
+          let bgClass, textClass, borderClass, circleClass
+          
+          if (isCompleted) {
+            bgClass = 'bg-emerald-50 hover:bg-emerald-100'
+            textClass = 'text-emerald-900'
+            borderClass = 'border-emerald-300'
+            circleClass = 'bg-emerald-600'
+          } else if (isCurrent) {
+            bgClass = 'bg-blue-50 hover:bg-blue-100'
+            textClass = 'text-blue-900'
+            borderClass = 'border-blue-400'
+            circleClass = 'bg-blue-600 ring-2 ring-blue-200'
+          } else {
+            bgClass = 'bg-gray-50 hover:bg-gray-100'
+            textClass = 'text-gray-700'
+            borderClass = 'border-gray-300'
+            circleClass = 'bg-gray-400'
+          }
 
-        return (
-          <div
-            key={stageKey}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold ${bgClass} ${textClass} ${borderClass}`}
-            title={sladays === null ? 'Sin SLA' : `SLA: ${sladays} días`}
-          >
-            <span
-              className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-extrabold text-white ${
-                isCompleted ? 'bg-emerald-600' : isCurrent ? 'bg-blue-700' : 'bg-gray-400'
-              }`}
+          return (
+            <div
+              key={stageKey}
+              className={`flex flex-col items-center gap-2 px-3 py-2 rounded-lg border ${bgClass} ${textClass} ${borderClass} transition-all min-w-max sm:flex-1`}
+              title={sladays === null ? 'Sin SLA' : `SLA: ${sladays} días`}
             >
-              {isCompleted ? '✓' : stageNum}
-            </span>
+              <div className="flex items-center justify-center gap-2">
+                <span
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${circleClass} transition-all`}
+                >
+                  {isCompleted ? '✓' : stageNum}
+                </span>
+              </div>
 
-            <span className="truncate max-w-[170px]">{stageName}</span>
-
-            {sladays !== null && (
-              <span className="ml-1 px-2 py-0.5 rounded-full bg-black/5 text-[11px] font-bold">
-                {sladays}d
+              <span className="text-xs font-semibold text-center leading-tight truncate max-w-[90px]">
+                {stageName}
               </span>
-            )}
-          </div>
-        )
-      })}
+
+              {sladays !== null && (
+                <span className="text-xs font-bold px-2 py-0.5 rounded bg-black/10">
+                  {sladays}d
+                </span>
+              )}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

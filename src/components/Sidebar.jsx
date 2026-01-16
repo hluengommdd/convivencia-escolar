@@ -16,6 +16,7 @@ import {
 import logoColegio from '../assets/veritas.jpg'
 import { useEffect, useState } from 'react'
 import { getCases } from '../api/db'
+import { onDataUpdated } from '../utils/refreshBus'
 
 export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
   const [collapsed, setCollapsed] = useState(false)
@@ -45,12 +46,33 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
   useEffect(() => {
     async function cargarCasosEnSeguimiento() {
       try {
-        const casos = await getCases('En Seguimiento')
+        // ✅ Cargar TODOS los casos y filtrar en frontend
+        const todos = await getCases()
+        const enSeguimiento = todos.filter(c => {
+          const estado = (c.fields?.Estado || '').trim().toLowerCase()
+          return estado === 'en seguimiento'
+        })
+        
         // Mapear para obtener el nombre del estudiante
-        const casosFormateados = casos.map(caso => ({
-          id: caso.id,
-          nombre: caso.fields.Estudiante_Responsable || 'Sin nombre',
-        }))
+        const casosFormateados = enSeguimiento.map(caso => {
+          // Estudiante_Responsable es un objeto, extraer nombre
+          const estudianteObj = caso.fields.Estudiante_Responsable
+          let nombre = 'Sin nombre'
+          
+          if (typeof estudianteObj === 'object' && estudianteObj !== null) {
+            // Si es objeto, buscar propiedades comunes de nombre
+            nombre = estudianteObj.full_name || estudianteObj.name || estudianteObj.apellidos || 'Sin nombre'
+          } else if (typeof estudianteObj === 'string') {
+            nombre = estudianteObj
+          }
+          
+          return {
+            id: caso.id,
+            nombre: nombre,
+          }
+        })
+        
+        console.log('📋 Casos en seguimiento cargados:', casosFormateados.length, casosFormateados)
         setCasesEnSeguimiento(casosFormateados)
       } catch (e) {
         console.error('Error cargando casos en seguimiento:', e)
@@ -58,6 +80,14 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
       }
     }
     cargarCasosEnSeguimiento()
+    
+    // Suscribirse a cambios de datos (cuando se inicia debido proceso)
+    const off = onDataUpdated(() => {
+      console.log('🔄 Refrescando casos en seguimiento del sidebar...')
+      cargarCasosEnSeguimiento()
+    })
+    
+    return () => off()
   }, [])
 
   const linkClass =

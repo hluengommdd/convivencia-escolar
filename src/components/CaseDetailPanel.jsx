@@ -1,6 +1,6 @@
 import { Edit2, Save, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { updateCase, iniciarDebidoProceso } from '../api/db'
+import { updateCase, iniciarDebidoProceso, getCase } from '../api/db'
 import { useState } from 'react'
 import InvolucradosListPlaceholder from './InvolucradosListPlaceholder'
 import CaseStudentHeaderCard from './CaseStudentHeaderCard'
@@ -28,29 +28,51 @@ export default function CaseDetailPanel({ caso, setRefreshKey, onDataChange }) {
   async function handleIniciarDebidoProceso(e) {
     e?.stopPropagation()
     try {
+      console.log('🚀 Iniciando debido proceso para caso:', caso.id)
+      console.log('Estado actual:', caso.fields?.Estado)
+      
       await iniciarDebidoProceso(caso.id, 10)
       
-      // ✅ Emitir evento para refrescar listados
+      console.log('✅ Debido proceso iniciado correctamente en BD')
+      
+      // ✅ Emitir evento para refrescar listados GLOBALMENTE
       emitDataUpdated()
 
       // ✅ NUEVO: forzar refresh reactivo (listado + paneles que dependan de refreshKey)
       setRefreshKey?.(k => k + 1)
       onDataChange?.()
       
-      // Pequeño delay para dar tiempo a que se actualice la DB
-      await new Promise(resolve => setTimeout(resolve, 300))
+      // ⏳ Delay para que Supabase actualice
+      console.log('⏳ Esperando 2 segundos para que Supabase actualice...')
+      await new Promise(resolve => setTimeout(resolve, 2000))
       
-      // ✅ navegación correcta
-      navigate(`/seguimientos?caso=${caso.id}`)
+      // ✅ Refrescar el caso local para actualizar el estado mostrado ANTES de navegar
+      console.log('🔄 Refrescando caso antes de navegar...')
+      try {
+        const casoActualizado = await getCase(caso.id)
+        if (casoActualizado) {
+          console.log('✅ Estado después de actualizar:', casoActualizado.fields?.Estado)
+        }
+      } catch (refreshErr) {
+        console.warn('⚠️ No se pudo refrescar el caso localmente:', refreshErr)
+      }
+      
+      // ✅ Navegar - Seguimientos harará su propio getCase() cuando arrive
+      console.log('📍 Navegando a seguimientos con caso_id:', caso.id)
+      navigate(`/seguimientos/${caso.id}`)
+      
+      // ⏳ Un delay más DESPUÉS de navegar para que Seguimientos.jsx tenga tiempo de cargar
+      await new Promise(resolve => setTimeout(resolve, 500))
     } catch (err) {
-      console.error(err)
-      alert(err?.message || 'Error iniciando debido proceso')
+      console.error('❌ Error iniciando debido proceso:', err)
+      const errorMsg = err?.message || 'Error iniciando debido proceso'
+      alert(`Error: ${errorMsg}\n\nAsegúrate de que:\n1. El caso exista en la base de datos\n2. La RPC start_due_process esté creada\n3. Tengas permisos para ejecutar la operación`)
     }
   }
 
   async function verSeguimiento() {
     // NO debe iniciar nada, solo navega
-    navigate(`/seguimientos?caso=${caso.id}`)
+    navigate(`/seguimientos/${caso.id}`)
   }
 
   async function guardarDescripcion() {
@@ -77,41 +99,11 @@ export default function CaseDetailPanel({ caso, setRefreshKey, onDataChange }) {
 
   return (
     <div className="bg-white rounded-xl shadow-sm h-full flex flex-col">
-      {/* HEADER de chips "Caso Activo" (se mantiene como ya lo tienes) */}
-      <div
-        className={`px-6 py-4 border-b ${
-          caso.fields.Tipificacion_Conducta === 'Leve'
-            ? 'bg-green-50'
-            : caso.fields.Tipificacion_Conducta === 'Grave'
-            ? 'bg-yellow-50'
-            : caso.fields.Tipificacion_Conducta === 'Muy Grave'
-            ? 'bg-purple-50'
-            : 'bg-red-50'
-        }`}
-      >
-        <div className="flex items-center gap-3">
-          <span className="px-3 py-1 text-sm font-semibold bg-white rounded-full">
-            Caso Activo
-          </span>
-
-          <span
-            className={`px-3 py-1 rounded-full text-sm font-semibold ${
-              caso.fields.Tipificacion_Conducta === 'Leve'
-                ? 'bg-green-100 text-green-800'
-                : caso.fields.Tipificacion_Conducta === 'Grave'
-                ? 'bg-yellow-100 text-yellow-800'
-                : caso.fields.Tipificacion_Conducta === 'Muy Grave'
-                ? 'bg-purple-100 text-purple-800'
-                : 'bg-red-100 text-red-800'
-            }`}
-          >
-            {caso.fields.Tipificacion_Conducta}
-          </span>
-        </div>
-      </div>
+      {/* HEADER: No se muestra en Casos Activos */}
+      <div className="hidden"></div>
 
       {/* CONTENIDO */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Tarjeta estudiante (sin SLA en Casos Activos) */}
         <CaseStudentHeaderCard
           studentName={caso.fields.Estudiante_Responsable}
@@ -201,15 +193,15 @@ export default function CaseDetailPanel({ caso, setRefreshKey, onDataChange }) {
       </div>
 
       {/* BOTÓN abajo */}
-      <div className="p-6 border-t bg-transparent">
+      <div className="p-4 sm:p-6 border-t bg-transparent">
         {caso._supabaseData?.seguimiento_started_at ? (
-          <button onClick={verSeguimiento} className="btn-primary w-full">
-            Ver seguimiento
+          <button onClick={verSeguimiento} className="px-3 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold w-full hover:bg-green-700 transition">
+            Iniciar debido proceso
           </button>
         ) : (
           <button 
             onClick={handleIniciarDebidoProceso} 
-            className="px-3 py-2 rounded-lg bg-black text-white text-sm font-semibold w-full"
+            className="px-3 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold w-full hover:bg-green-700 transition"
           >
             Iniciar debido proceso
           </button>

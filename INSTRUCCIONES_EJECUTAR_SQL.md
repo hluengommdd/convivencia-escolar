@@ -1,5 +1,21 @@
+# Instrucciones para actualizar la RPC en Supabase
+
+## Problema
+El RPC `start_due_process` necesita ser actualizado para manejar casos con estado "Reportado", no solo "Activo".
+
+## Solución
+Ejecuta el siguiente SQL en Supabase:
+
+### Paso 1: Ir a Supabase
+1. Abre https://supabase.com
+2. Ve a tu proyecto
+3. Abre el editor SQL (SQL Editor en el menú lateral)
+
+### Paso 2: Copiar y ejecutar el siguiente SQL
+
+```sql
 -- ============================================================
--- RPC: start_due_process
+-- RPC: start_due_process (ACTUALIZADO)
 -- ============================================================
 -- Proposito: Iniciar el debido proceso en un caso
 -- - Setea seguimiento_started_at (solo si no existe) con now()
@@ -7,14 +23,6 @@
 -- - Setea indagacion_due_date (start_date + SLA business days)
 -- - Cambia status a "En Seguimiento" (si era "Reportado" o "Activo")
 -- - Usa add_business_days para calcular fechas hábiles
---
--- Uso en Frontend:
---   const { error } = await supabase.rpc('start_due_process', {
---     p_case_id: caseId,
---     p_sla_days: 10
---   })
---
--- ============================================================
 
 create or replace function public.start_due_process(
   p_case_id uuid,
@@ -42,3 +50,17 @@ begin
   where c.id = p_case_id;
 end;
 $$;
+```
+
+### Paso 3: Ejecutar
+- Click en el botón "Run" (o Ctrl+Enter)
+- Deberías ver "Success" si todo está bien
+
+## Después de ejecutar
+
+La RPC ahora manejará correctamente:
+- ✅ Casos en estado "Reportado" → cambiarán a "En Seguimiento"
+- ✅ Casos en estado "Activo" → cambiarán a "En Seguimiento"
+- ✅ Otros estados → se mantienen igual
+
+Ahora podrás hacer click en "Iniciar debido proceso" en cualquier caso y funcionará correctamente.
