@@ -19,92 +19,125 @@ const TIPOS_COLORS = {
 const styles = StyleSheet.create({
   page: { padding: 24, fontSize: 10, fontFamily: 'Helvetica' },
   header: { 
-    marginBottom: 16, 
+    marginBottom: 20, 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'flex-start',
     borderBottomWidth: 2,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#1f2937',
     paddingBottom: 12
   },
   headerText: { flex: 1 },
   logo: { width: 50, height: 50, objectFit: 'contain' },
-  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
-  subtitle: { fontSize: 10, marginTop: 4, marginBottom: 2, color: '#374151' },
-  small: { fontSize: 9, color: '#6b7280' },
+  mainTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 2, color: '#1f2937' },
+  subtitle: { fontSize: 10, marginTop: 2, marginBottom: 2, color: '#374151' },
+  emissionDate: { fontSize: 9, color: '#6b7280', marginTop: 4 },
   
   section: { marginBottom: 16 },
   sectionTitle: { 
-    fontSize: 13, 
+    fontSize: 12, 
     fontWeight: 'bold', 
     marginBottom: 8,
     color: '#1f2937',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    paddingBottom: 4
+    backgroundColor: '#f3f4f6',
+    padding: 6,
+    borderLeftWidth: 4,
+    borderLeftColor: '#3b82f6'
   },
   
   infoBox: {
     padding: 12,
     backgroundColor: '#f9fafb',
-    borderRadius: 6,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: '#e5e7eb',
-    marginBottom: 12
+    marginBottom: 8
   },
   row: { 
     flexDirection: 'row', 
-    marginBottom: 6,
+    marginBottom: 5,
     alignItems: 'flex-start'
   },
   label: { 
-    width: 130, 
-    fontSize: 10, 
+    width: 140, 
+    fontSize: 9, 
     fontWeight: 'bold',
     color: '#374151'
   },
   value: { 
     flex: 1, 
-    fontSize: 10,
+    fontSize: 9,
     color: '#1f2937'
   },
   
   descriptionBox: {
     padding: 12,
     backgroundColor: '#f9fafb',
-    borderRadius: 6,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: '#e5e7eb',
     lineHeight: 1.5
   },
   
-  seguimientoItem: {
-    padding: 10,
-    backgroundColor: '#f9fafb',
-    borderRadius: 6,
-    borderLeftWidth: 3,
+  timelineItem: {
+    padding: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderLeftWidth: 4,
     borderLeftColor: '#3b82f6',
-    marginBottom: 8
+    marginBottom: 10
   },
-  seguimientoHeader: {
+  timelineDate: {
     fontSize: 10,
     fontWeight: 'bold',
     color: '#1f2937',
-    marginBottom: 4
+    marginBottom: 6
   },
-  seguimientoDetail: {
+  timelineMeta: {
+    fontSize: 8,
+    color: '#6b7280',
+    marginBottom: 2
+  },
+  timelineDescription: {
     fontSize: 9,
-    color: '#4b5563',
-    lineHeight: 1.4
+    color: '#374151',
+    lineHeight: 1.4,
+    marginTop: 4
+  },
+  evidenceList: {
+    marginTop: 6,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb'
+  },
+  evidenceItem: {
+    fontSize: 8,
+    color: '#6b7280',
+    marginBottom: 2
   },
   
-  resolutionBox: {
-    padding: 12,
+  closureBox: {
+    padding: 14,
     backgroundColor: '#ecfdf5',
-    borderRadius: 6,
+    borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#a7f3d0',
+    borderColor: '#10b981',
+    borderLeftWidth: 4,
+    borderLeftColor: '#10b981',
     lineHeight: 1.5
+  },
+  closureTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#065f46',
+    marginBottom: 6
+  },
+  closureText: {
+    fontSize: 9,
+    color: '#047857',
+    marginBottom: 3
   },
   
   signatureRow: { 
@@ -140,107 +173,179 @@ const styles = StyleSheet.create({
   }
 })
 
+function formatDate(value) {
+  if (!value) return '—'
+  const d = new Date(value)
+  if (isNaN(d.getTime())) return value
+  return d.toLocaleDateString('es-CL')
+}
+
+function getLegacyOrShortId(caso) {
+  const legacy = caso?._supabaseData?.legacy_case_number
+  if (legacy) return legacy
+  const uuid = caso?.id || ''
+  return uuid.slice(-8) || 'N/A'
+}
+
 export default function InformeCasoDocument({ caso, seguimientos = [] }) {
-  const id = caso?.fields?.ID_Caso || caso?.id || 'caso'
+  // Ordenar seguimientos por fecha
+  const seguimientosOrdenados = [...seguimientos].sort((a, b) => {
+    const dateA = a.fields?.Fecha_Seguimiento || a.fields?.Fecha || a._supabaseData?.action_date || a._supabaseData?.created_at || ''
+    const dateB = b.fields?.Fecha_Seguimiento || b.fields?.Fecha || b._supabaseData?.action_date || b._supabaseData?.created_at || ''
+    return new Date(dateA) - new Date(dateB)
+  })
+
+  const esCerrado = caso?.fields?.Estado === 'Cerrado'
+  const fechaCierre = caso?.fields?.Fecha_Cierre
+  const ultimoSeguimiento = seguimientosOrdenados[seguimientosOrdenados.length - 1]
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* ENCABEZADO */}
+        {/* ENCABEZADO PRINCIPAL */}
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text style={styles.title}>INFORME DE CIERRE DE CASO</Text>
+            <Text style={styles.mainTitle}>INFORME DE GESTIÓN DE CONVIVENCIA ESCOLAR</Text>
             <Text style={styles.subtitle}>Colegio Carmera Romero de Espinoza - MMDD Concepción</Text>
-            <Text style={styles.small}>Fecha de emisión: {new Date().toLocaleDateString('es-CL')}</Text>
+            <Text style={styles.emissionDate}>Fecha de emisión del informe: {formatDate(new Date())}</Text>
           </View>
           <Image src={logoColegio} style={styles.logo} />
         </View>
 
-        {/* 1. IDENTIFICACIÓN */}
+        {/* 1. IDENTIFICACIÓN DEL CASO */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>1. Identificación del Caso</Text>
+          <Text style={styles.sectionTitle}>1. IDENTIFICACIÓN DEL CASO</Text>
           <View style={styles.infoBox}>
             <View style={styles.row}>
-              <Text style={styles.label}>ID Caso:</Text>
-              <Text style={styles.value}>{id}</Text>
+              <Text style={styles.label}>ID del Caso:</Text>
+              <Text style={styles.value}>{getLegacyOrShortId(caso)}</Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Estudiante:</Text>
-              <Text style={styles.value}>{caso?.fields?.Estudiante_Responsable}</Text>
+              <Text style={styles.value}>{caso?.fields?.Estudiante_Responsable || 'N/A'}</Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Curso:</Text>
-              <Text style={styles.value}>{caso?.fields?.Curso_Incidente}</Text>
+              <Text style={styles.value}>{caso?.fields?.Curso_Incidente || 'N/A'}</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Fecha incidente:</Text>
-              <Text style={styles.value}>{caso?.fields?.Fecha_Incidente}</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Hora:</Text>
-              <Text style={styles.value}>{caso?.fields?.Hora_Incidente}</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Tipificación:</Text>
-              <Text style={styles.value}>{caso?.fields?.Tipificacion_Conducta}</Text>
+              <Text style={styles.label}>Tipo de falta / Tipificación:</Text>
+              <Text style={styles.value}>{caso?.fields?.Tipificacion_Conducta || 'N/A'}</Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Categoría:</Text>
-              <Text style={styles.value}>{caso?.fields?.Categoria}</Text>
+              <Text style={styles.value}>{caso?.fields?.Categoria || 'N/A'}</Text>
             </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Fecha del incidente:</Text>
+              <Text style={styles.value}>{formatDate(caso?.fields?.Fecha_Incidente)}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Hora del incidente:</Text>
+              <Text style={styles.value}>{caso?.fields?.Hora_Incidente || 'N/A'}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Estado del caso:</Text>
+              <Text style={styles.value}>{caso?.fields?.Estado || 'N/A'}</Text>
+            </View>
+            {fechaCierre && (
+              <View style={styles.row}>
+                <Text style={styles.label}>Fecha de cierre:</Text>
+                <Text style={styles.value}>{formatDate(fechaCierre)}</Text>
+              </View>
+            )}
           </View>
         </View>
 
-        {/* 2. DESCRIPCIÓN */}
+        {/* 2. DESCRIPCIÓN DEL HECHO */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>2. Descripción del Hecho</Text>
+          <Text style={styles.sectionTitle}>2. DESCRIPCIÓN DEL HECHO</Text>
           <View style={styles.descriptionBox}>
             <Text>{caso?.fields?.Descripcion || 'Sin descripción registrada.'}</Text>
           </View>
         </View>
 
-        {/* 3. SEGUIMIENTO */}
+        {/* 3. LÍNEA DE TIEMPO DE ACTUACIONES */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>3. Seguimiento y Medidas Adoptadas</Text>
-          {seguimientos.length === 0 ? (
+          <Text style={styles.sectionTitle}>3. LÍNEA DE TIEMPO DE ACTUACIONES Y DEBIDO PROCESO</Text>
+          {seguimientosOrdenados.length === 0 ? (
             <View style={styles.infoBox}>
-              <Text style={{ fontSize: 9, color: '#6b7280' }}>No se registraron seguimientos para este caso.</Text>
+              <Text style={{ fontSize: 9, color: '#6b7280' }}>No se registraron actuaciones para este caso.</Text>
             </View>
           ) : (
-            seguimientos.map((s, i) => {
-              const tipo = s.fields?.Tipificacion_Conducta || ''
-              const color = TIPOS_COLORS[tipo] || '#3b82f6'
+            seguimientosOrdenados.map((seg, i) => {
+              const fecha = seg.fields?.Fecha_Seguimiento || seg.fields?.Fecha || '—'
+              const etapa = seg.fields?.Etapa_Debido_Proceso || '—'
+              const tipo = seg.fields?.Tipo_Accion || 'Actuación'
+              const responsable = seg.fields?.Responsable || '—'
+              const descripcion = seg.fields?.Detalle || seg.fields?.Descripcion || 'Sin descripción'
+              const plazo = seg.fields?.Fecha_Plazo
+              const estadoEtapa = seg.fields?.Estado_Etapa || '—'
+
               return (
-                <View
-                  key={s.id || i}
-                  style={{
-                    ...styles.seguimientoItem,
-                    borderLeftColor: color,
-                  }}
-                >
-                  <Text style={styles.seguimientoHeader}>
-                    {s.fields?.Fecha || 'Sin fecha'} · {s.fields?.Tipo_Accion || 'Sin tipo'}
+                <View key={seg.id || i} style={styles.timelineItem}>
+                  <Text style={styles.timelineDate}>
+                    {formatDate(fecha)} · {tipo}
                   </Text>
-                  <Text style={styles.seguimientoDetail}>
-                    {s.fields?.Detalle || 'Sin detalle'}
+                  
+                  <Text style={styles.timelineMeta}>
+                    Etapa: {etapa} | Responsable: {responsable} | Estado: {estadoEtapa}
                   </Text>
+                  
+                  {plazo && (
+                    <Text style={styles.timelineMeta}>
+                      Plazo: {formatDate(plazo)}
+                    </Text>
+                  )}
+                  
+                  <Text style={styles.timelineDescription}>
+                    {descripcion}
+                  </Text>
+
+                  {/* EVIDENCIAS (si existen) */}
+                  {seg._evidencias && seg._evidencias.length > 0 && (
+                    <View style={styles.evidenceList}>
+                      <Text style={{ fontSize: 8, fontWeight: 'bold', color: '#6b7280', marginBottom: 3 }}>
+                        Evidencias adjuntas:
+                      </Text>
+                      {seg._evidencias.map((ev, idx) => (
+                        <Text key={idx} style={styles.evidenceItem}>
+                          • {ev.file_name || ev.storage_path || 'Archivo sin nombre'}
+                        </Text>
+                      ))}
+                    </View>
+                  )}
                 </View>
               )
             })
           )}
         </View>
 
-        {/* 4. RESOLUCIÓN */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>4. Resolución Final</Text>
-          <View style={styles.resolutionBox}>
-            <Text>
-              El caso fue cerrado conforme al debido proceso establecido en el reglamento 
-              interno de convivencia escolar. Se aplicaron las medidas formativas y/o 
-              disciplinarias correspondientes según la tipificación de la conducta.
-            </Text>
+        {/* 4. CIERRE DEL CASO (solo si está cerrado) */}
+        {esCerrado && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>4. CIERRE DEL CASO</Text>
+            <View style={styles.closureBox}>
+              <Text style={styles.closureTitle}>Cierre formal del caso</Text>
+              <Text style={styles.closureText}>
+                Fecha de cierre: {formatDate(fechaCierre)}
+              </Text>
+              {ultimoSeguimiento && (
+                <>
+                  <Text style={styles.closureText}>
+                    Última actuación: {ultimoSeguimiento.fields?.Tipo_Accion || 'Cierre del caso'}
+                  </Text>
+                  <Text style={styles.closureText}>
+                    {ultimoSeguimiento.fields?.Detalle || ultimoSeguimiento.fields?.Descripcion || ''}
+                  </Text>
+                </>
+              )}
+              <Text style={{ fontSize: 9, color: '#047857', marginTop: 6 }}>
+                El caso fue cerrado conforme al debido proceso establecido en el reglamento interno de convivencia escolar.
+              </Text>
+            </View>
           </View>
-        </View>
+        )}
 
         {/* FIRMAS */}
         <View style={styles.signatureRow}>
@@ -255,7 +360,7 @@ export default function InformeCasoDocument({ caso, seguimientos = [] }) {
         {/* FOOTER */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            Informe generado automáticamente por el Sistema de Convivencia Escolar
+            Informe generado automáticamente por el Sistema de Convivencia Escolar · Documento con valor de respaldo ante fiscalización
           </Text>
         </View>
       </Page>

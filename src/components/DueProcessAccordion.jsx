@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 
 function norm(s) {
   return (s || '').trim().replace(/\s+/g, ' ')
@@ -11,7 +11,7 @@ function groupByStage(followups = []) {
     if (!map.has(stage)) map.set(stage, [])
     map.get(stage).push(f)
   }
-  for (const [k, arr] of map.entries()) {
+  for (const [_k, arr] of map.entries()) {
     arr.sort((a, b) => (a?.fields?.Fecha || '').localeCompare(b?.fields?.Fecha || ''))
   }
   return map
@@ -45,11 +45,7 @@ export default function DueProcessAccordion({
   }, [followups])
 
   const grouped = useMemo(() => groupByStage(filteredFollowups), [filteredFollowups])
-  const [openKey, setOpenKey] = useState(null)
-
-  useEffect(() => {
-    if (currentStageKey) setOpenKey(currentStageKey)
-  }, [currentStageKey])
+  const [openKey, setOpenKey] = useState(currentStageKey)
 
   return (
     <div className="bg-white rounded-2xl border overflow-hidden">

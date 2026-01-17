@@ -151,11 +151,25 @@ export default function SeguimientoPage({
                 try {
                   const { pdf } = await import('@react-pdf/renderer')
                   const { default: InformeCasoDocument } = await import('../components/InformeCasoDocument.jsx')
+                  const { listEvidenceByFollowup } = await import('../api/evidence')
+
+                  // Enriquecer seguimientos con evidencias
+                  const seguimientosConEvidencias = await Promise.all(
+                    (seguimientos || []).map(async (seg) => {
+                      try {
+                        const evidencias = await listEvidenceByFollowup(seg.id)
+                        return { ...seg, _evidencias: evidencias || [] }
+                      } catch (e) {
+                        console.warn('No se pudieron cargar evidencias para seguimiento', seg.id, e)
+                        return { ...seg, _evidencias: [] }
+                      }
+                    })
+                  )
 
                   const doc = (
                     <InformeCasoDocument
                       caso={caso}
-                      seguimientos={seguimientos || []}
+                      seguimientos={seguimientosConEvidencias}
                     />
                   )
 
@@ -207,6 +221,11 @@ export default function SeguimientoPage({
             <div className="text-sm text-gray-600">
               Curso: {caso.fields.Curso_Incidente || 'N/A'}
             </div>
+            {caso.fields.Fecha_Cierre && (
+              <div className="text-sm text-gray-600 mt-2">
+                Fecha de cierre: {formatDate(caso.fields.Fecha_Cierre)}
+              </div>
+            )}
           </div>
 
           <div>

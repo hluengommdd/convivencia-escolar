@@ -96,8 +96,6 @@ export default function CaseDetailPanel({ caso, setRefreshKey, onDataChange }) {
     setEditando(false)
   }
 
-  const estado = caso.fields.Estado || '—'
-
   return (
     <div className="bg-white rounded-xl shadow-sm h-full flex flex-col">
       {/* HEADER: No se muestra en Casos Activos */}

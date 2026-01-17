@@ -50,6 +50,7 @@ function mapCaseRow(row) {
       Acciones_Tomadas: EMPTY,
       Apoderado_Notificado: Boolean(row.guardian_notified),
       Fecha_Creacion: row.created_at || EMPTY,
+      Fecha_Cierre: row.closed_at,
     },
     _supabaseData: row,
   }
@@ -541,7 +542,9 @@ export async function addInvolucrado(payload) {
     // ensure metadata is jsonb
     const toInsert = { ...payload }
     if (toInsert.metadata && typeof toInsert.metadata !== 'object') {
-      try { toInsert.metadata = JSON.parse(toInsert.metadata) } catch (e) { /* leave as-is */ }
+      try { toInsert.metadata = JSON.parse(toInsert.metadata) } catch {
+        // leave as-is
+      }
     }
 
     const { data, error } = await withRetry(() =>

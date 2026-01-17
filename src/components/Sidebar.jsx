@@ -19,27 +19,25 @@ import { getCases } from '../api/db'
 import { onDataUpdated } from '../utils/refreshBus'
 
 export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      const v = localStorage.getItem('sidebar-collapsed')
+      if (v === null) {
+        localStorage.setItem('sidebar-collapsed', 'false')
+        return false
+      }
+      return v === 'true'
+    } catch {
+      return false
+    }
+  })
   const [expandedSeguimientos, setExpandedSeguimientos] = useState(false)
   const [casesEnSeguimiento, setCasesEnSeguimiento] = useState([])
 
   useEffect(() => {
-    try {
-      const v = localStorage.getItem('sidebar-collapsed')
-      if (v === null) {
-        // si no existe, arrancar expandida por defecto
-        localStorage.setItem('sidebar-collapsed', 'false')
-        setCollapsed(false)
-      } else {
-        setCollapsed(v === 'true')
-      }
-    } catch (e) {
-      setCollapsed(false)
+    try { localStorage.setItem('sidebar-collapsed', collapsed ? 'true' : 'false') } catch {
+      // silently fail
     }
-  }, [])
-
-  useEffect(() => {
-    try { localStorage.setItem('sidebar-collapsed', collapsed ? 'true' : 'false') } catch (e) {}
   }, [collapsed])
 
   // Cargar casos en seguimiento

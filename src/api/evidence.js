@@ -8,16 +8,36 @@ function safeFileName(name = '') {
 }
 
 export async function uploadEvidenceFiles({ caseId, followupId, files = [] }) {
-  if (!caseId) throw new Error('Falta caseId para evidencias')
   if (!followupId) throw new Error('Falta followupId para evidencias')
   if (!files.length) return []
+
+  // Resolver case_id real desde el followup
+  const { data: followupRow, error: fuErr } = await withRetry(() =>
+    supabase
+      .from('case_followups')
+      .select('case_id')
+      .eq('id', followupId)
+      .single()
+  )
+  if (fuErr) throw fuErr
+  const realCaseId = followupRow?.case_id
+  if (!realCaseId) throw new Error('No se pudo resolver case_id del followup')
+
+  if (caseId && caseId !== realCaseId) {
+    console.warn('[uploadEvidenceFiles] caseId no coincide con followup.case_id; usando realCaseId', {
+      caseId,
+      realCaseId,
+      followupId,
+    })
+  }
 
   const uploadedRows = []
 
   for (const file of files) {
     const safeName = safeFileName(file.name)
-    const path = `cases/${caseId}/followups/${followupId}/${Date.now()}_${safeName}`
+    const path = `cases/${realCaseId}/followups/${followupId}/${Date.now()}_${safeName}`
 
+    // 1) Subir a Storage
     const { error: upErr } = await supabase.storage
       .from(BUCKET)
       .upload(path, file, {
@@ -27,12 +47,13 @@ export async function uploadEvidenceFiles({ caseId, followupId, files = [] }) {
 
     if (upErr) throw upErr
 
+    // 2) Insertar en DB
     const { data, error: dbErr } = await withRetry(() =>
       supabase
         .from('followup_evidence')
         .insert([
           {
-            case_id: caseId,
+            case_id: realCaseId,
             followup_id: followupId,
             storage_bucket: BUCKET,
             storage_path: path,
@@ -45,7 +66,12 @@ export async function uploadEvidenceFiles({ caseId, followupId, files = [] }) {
         .single()
     )
 
-    if (dbErr) throw dbErr
+    if (dbErr) {
+      // cleanup para evitar huérfanos
+      await supabase.storage.from(BUCKET).remove([path])
+      throw dbErr
+    }
+
     uploadedRows.push(data)
   }
 

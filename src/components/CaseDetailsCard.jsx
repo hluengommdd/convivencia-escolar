@@ -1,4 +1,3 @@
-import { useMemo } from "react"
 import { formatDate } from "../utils/formatDate"
 import { listEvidenceByFollowup, getEvidenceSignedUrl } from "../api/evidence"
 
@@ -74,7 +73,6 @@ export default function CaseDetailsCard({
   const gravedad = f.Tipificacion_Conducta || "Muy Grave";
   const estado = f.Estado || "En Seguimiento";
   const desc = f.Descripcion || "Sin descripción";
-  const fechaIncidente = f.Fecha_Incidente || null;
 
   // =========================
   // Temporalidad secundaria (NO repetir SLA aquí)

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getInvolucrados, addInvolucrado, updateInvolucrado, deleteInvolucrado } from '../api/db'
+import { getInvolucrados, addInvolucrado, deleteInvolucrado } from '../api/db'
 import { useToast } from '../hooks/useToast'
 import InvolucradoRow from './InvolucradoRow'
 
@@ -23,7 +23,9 @@ export default function InvolucradosList({ casoId, readOnly = false }) {
         if (mounted) setItems(data || [])
       } catch (e) {
         console.error(e)
-        push({ type: 'error', title: 'Error', message: 'No se pudieron cargar involucrados' })
+        if (mounted) {
+          // silently fail on load
+        }
       } finally {
         if (mounted) setLoading(false)
       }
@@ -51,26 +53,14 @@ export default function InvolucradosList({ casoId, readOnly = false }) {
     }
   }
 
-  async function handleUpdate(updated) {
+  async function handleDelete(itemId) {
     try {
-      const saved = await updateInvolucrado(updated.id, { nombre: updated.nombre, rol: updated.rol })
-      setItems(prev => prev.map(i => i.id === saved.id ? saved : i))
-      push({ type: 'success', title: 'Actualizado', message: 'Involucrado actualizado' })
-    } catch (e) {
-      console.error(e)
-      push({ type: 'error', title: 'Error', message: 'No se pudo actualizar' })
-    }
-  }
-
-  async function handleDelete(id) {
-    if (!confirm('¿Eliminar involucrado?')) return
-    try {
-      await deleteInvolucrado(id)
-      setItems(prev => prev.filter(i => i.id !== id))
+      await deleteInvolucrado(itemId)
+      setItems(prev => prev.filter(i => i.id !== itemId))
       push({ type: 'success', title: 'Eliminado', message: 'Involucrado eliminado' })
     } catch (e) {
       console.error(e)
-      push({ type: 'error', title: 'Error', message: 'No se pudo eliminar' })
+      push({ type: 'error', title: 'Error', message: 'No se pudo eliminar involucrado' })
     }
   }
 

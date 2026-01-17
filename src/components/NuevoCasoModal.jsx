@@ -75,7 +75,6 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
   const [conductas, setConductas] = useState([])
   const [descripcionLibre, setDescripcionLibre] = useState('')
   // Estado se fija por defecto a 'Reportado' y no se muestra el selector
-  const [estado, setEstado] = useState('Reportado')
   const [guardando, setGuardando] = useState(false)
   const [involucradosTemp, setInvolucradosTemp] = useState([])
   const [nombreInv, setNombreInv] = useState('')
@@ -208,7 +207,7 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
         Tipificacion_Conducta: tipo,
         Categoria: categoriasConducta,
         Descripcion: descripcionLibre,
-        Estado: estado
+        Estado: 'Reportado'
       }
       
       console.log('📝 Guardando caso con datos:', casoData)

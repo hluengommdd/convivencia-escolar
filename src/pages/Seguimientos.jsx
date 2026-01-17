@@ -22,6 +22,8 @@ export default function Seguimientos() {
   // Usar query param si existe, si no usar URL param
   const casoId = queryCaseId || urlCaseId || null
 
+  const { push } = useToast()
+
   const [refreshKey, setRefreshKey] = useState(0)
   const doRefresh = () => setRefreshKey(k => k + 1)
 
@@ -93,8 +95,6 @@ export default function Seguimientos() {
   if (!casoId) {
     return <div className="p-6 text-gray-500">Selecciona un caso desde el sidebar.</div>
   }
-
-  const { push } = useToast()
 
   // Botón Cerrar (componente pequeño local)
   function CerrarButton({ casoId, setRefreshKey }) {
