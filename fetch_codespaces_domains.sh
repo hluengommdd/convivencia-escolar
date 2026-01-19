@@ -38,5 +38,3 @@ fi
 # Fetch codespaces domains
 echo "Codespaces domains:"
 gh api meta --jq .domains.codespaces
-
-exit 0
