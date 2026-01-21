@@ -1,6 +1,5 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
 import { getAllControlAlertas, getCases } from '../api/db'
 import { formatDate } from '../utils/formatDate'
 import { AlertTriangle, Clock, CheckCircle, FileText } from 'lucide-react'
@@ -64,15 +63,15 @@ export default function AlertasPlazos() {
           getAllControlAlertas(),
           getCases()
         ])
-        
-        // ✅ Filtrar alertas: 
-        // 1. No mostrar casos cerrados
-        // 2. SOLO mostrar casos con seguimiento_started_at (proceso iniciado)
-        const controlFiltrado = (controlData || []).filter(s => {
+
+        // ✅ Filtrar alertas:
+        // 1) No mostrar casos cerrados
+        // 2) SOLO mostrar casos con seguimiento_started_at (proceso iniciado)
+        const controlFiltrado = (controlData || []).filter((s) => {
           const casoId = s.fields?.CASOS_ACTIVOS?.[0]
           if (!casoId) return false
 
-          const caso = (casesData || []).find(c => c.id === casoId)
+          const caso = (casesData || []).find((c) => c.id === casoId)
           if (!caso) return false
 
           // Caso cerrado → no mostrar
@@ -86,7 +85,7 @@ export default function AlertasPlazos() {
         })
 
         setSeguimientos(controlFiltrado)
-        setCasos(casesData)
+        setCasos(casesData || [])
       } catch (e) {
         console.error(e)
         setError(e?.message || 'Error al cargar alertas')
@@ -110,13 +109,14 @@ export default function AlertasPlazos() {
       sin: [],
     }
 
-    ;(seguimientos || []).forEach(s => {
+    ;(seguimientos || []).forEach((s) => {
       const alerta = s.fields?.Alerta_Urgencia || '⏳ SIN PLAZO'
 
-      if (alerta.startsWith('🔴')) grupos.rojos.push(s)
-      else if (alerta.startsWith('🟠')) grupos.naranjos.push(s)
-      else if (alerta.startsWith('🟡')) grupos.amarillos.push(s)
-      else if (alerta.startsWith('✅') || alerta.startsWith('🟢')) grupos.verdes.push(s)
+      if (String(alerta).startsWith('🔴')) grupos.rojos.push(s)
+      else if (String(alerta).startsWith('🟠')) grupos.naranjos.push(s)
+      else if (String(alerta).startsWith('🟡')) grupos.amarillos.push(s)
+      else if (String(alerta).startsWith('✅') || String(alerta).startsWith('🟢'))
+        grupos.verdes.push(s)
       else grupos.sin.push(s)
     })
 
@@ -126,17 +126,20 @@ export default function AlertasPlazos() {
       return (da ?? Infinity) - (db ?? Infinity)
     }
 
-    Object.values(grupos).forEach(arr => arr.sort(sortByDays))
+    Object.values(grupos).forEach((arr) => arr.sort(sortByDays))
     return grupos
   }, [seguimientos])
 
-  const resumen = useMemo(() => ({
-    rojos: clasificados.rojos.length,
-    naranjos: clasificados.naranjos.length,
-    amarillos: clasificados.amarillos.length,
-    verdes: clasificados.verdes.length,
-    sin: clasificados.sin.length,
-  }), [clasificados])
+  const resumen = useMemo(
+    () => ({
+      rojos: clasificados.rojos.length,
+      naranjos: clasificados.naranjos.length,
+      amarillos: clasificados.amarillos.length,
+      verdes: clasificados.verdes.length,
+      sin: clasificados.sin.length,
+    }),
+    [clasificados]
+  )
 
   if (loading) return <p className="text-gray-500">Cargando alertas…</p>
   if (error) return <p className="text-red-500">Error: {error}</p>
@@ -153,33 +156,33 @@ export default function AlertasPlazos() {
         </div>
       </div>
 
-      {/* RESUMEN CON CARDS MEJORADAS */}
+      {/* RESUMEN CON CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <CardResumen 
+        <CardResumen
           icon={<AlertTriangle className="text-red-600" size={24} />}
           label="Vencidos"
           value={resumen.rojos}
           color="red"
         />
-        <CardResumen 
+        <CardResumen
           icon={<AlertTriangle className="text-purple-600" size={24} />}
           label="Urgentes"
           value={resumen.naranjos}
           color="purple"
         />
-        <CardResumen 
+        <CardResumen
           icon={<Clock className="text-green-600" size={24} />}
           label="Próximos"
           value={resumen.amarillos}
           color="green"
         />
-        <CardResumen 
+        <CardResumen
           icon={<CheckCircle className="text-green-600" size={24} />}
           label="En plazo"
           value={resumen.verdes}
           color="green"
         />
-        <CardResumen 
+        <CardResumen
           icon={<FileText className="text-gray-500" size={24} />}
           label="Sin plazo"
           value={resumen.sin}
@@ -187,37 +190,58 @@ export default function AlertasPlazos() {
         />
       </div>
 
-      {/* SECCIONES */}
-      <Seccion
-        titulo="🔴 Vencidos / Críticos"
-        descripcion="Requieren acción inmediata"
-        items={clasificados.rojos}
-        casos={casos || []}
-        navigate={navigate}
-        tone="red"
-        large
-      />
+      {/* SECCIONES (tarjetas debajo, como en GitHub) */}
+      <div className="space-y-8">
+        <Seccion
+          titulo="🔴 Vencidos / Críticos"
+          descripcion="Requieren acción inmediata"
+          items={clasificados.rojos}
+          casos={casos || []}
+          navigate={navigate}
+          tone="red"
+        />
 
-      <Seccion
-        titulo="🟠 Urgentes"
-        descripcion="Vencen hoy o en pocos días"
-        items={clasificados.naranjos}
-        casos={casos || []}
-        navigate={navigate}
-        tone="purple"
-      />
+        <Seccion
+          titulo="🟠 Urgentes"
+          descripcion="Vencen hoy o en pocos días"
+          items={clasificados.naranjos}
+          casos={casos || []}
+          navigate={navigate}
+          tone="purple"
+        />
 
-      <Seccion
-        titulo="🟡 Preventivos"
-        descripcion="Seguimiento anticipado"
-        items={clasificados.amarillos}
-        casos={casos || []}
-        navigate={navigate}
-        tone="green"
-        compact
-      />
+        <Seccion
+          titulo="🟡 Próximos / Preventivos"
+          descripcion="Seguimiento anticipado"
+          items={clasificados.amarillos}
+          casos={casos || []}
+          navigate={navigate}
+          tone="green"
+          compact
+        />
 
-      {Object.values(resumen).every(v => v === 0) && (
+        <Seccion
+          titulo="✅ En Plazo"
+          descripcion="Casos que están al día, cumpliendo con los plazos establecidos."
+          items={clasificados.verdes}
+          casos={casos || []}
+          navigate={navigate}
+          tone="green"
+          compact
+        />
+
+        <Seccion
+          titulo="⏳ Sin Plazo Definido"
+          descripcion="Casos que no tienen un plazo específico asignado."
+          items={clasificados.sin}
+          casos={casos || []}
+          navigate={navigate}
+          tone="gray"
+          compact
+        />
+      </div>
+
+      {Object.values(resumen).every((v) => v === 0) && (
         <div className="bg-white border rounded-xl p-6 text-gray-500">
           No hay alertas activas en este momento.
         </div>
@@ -244,20 +268,15 @@ function CardResumen({ icon, label, value, color }) {
     <div className={`rounded-2xl p-4 card ${colorClasses[color]}`}>
       <div className="flex items-center justify-between mb-2">
         {icon}
-        <span className={`text-3xl font-bold ${color === 'gray' ? 'text-gray-700' : `text-${color}-700`}`}>
+        <span
+          className={`text-3xl font-bold ${
+            color === 'gray' ? 'text-gray-700' : `text-${color}-700`
+          }`}
+        >
           {value}
         </span>
       </div>
       <div className="text-sm font-medium text-gray-700">{label}</div>
-    </div>
-  )
-}
-
-function Resumen({ label, value, color }) {
-  return (
-    <div className="bg-white border rounded-xl p-4">
-      <div className="text-xs text-gray-500">{label}</div>
-      <div className={`text-2xl font-bold ${color}`}>{value}</div>
     </div>
   )
 }
@@ -295,23 +314,16 @@ function Seccion({
       text: 'text-green-900',
       badge: 'bg-green-100 text-green-800'
     },
-    orange: {
-      border: 'border-orange-200',
-      bg: 'bg-orange-50',
-      hover: 'hover:bg-orange-100 hover:shadow-md',
-      text: 'text-orange-900',
-      badge: 'bg-orange-100 text-orange-800'
-    },
-    yellow: {
-      border: 'border-yellow-200',
-      bg: 'bg-yellow-50',
-      hover: 'hover:bg-yellow-100 hover:shadow-md',
-      text: 'text-yellow-900',
-      badge: 'bg-yellow-100 text-yellow-800'
+    gray: {
+      border: 'border-gray-200',
+      bg: 'bg-gray-50',
+      hover: 'hover:bg-gray-100 hover:shadow-md',
+      text: 'text-gray-900',
+      badge: 'bg-gray-100 text-gray-800'
     }
   }
 
-  const styles = toneMap[tone]
+  const styles = toneMap[tone] || toneMap.gray
 
   return (
     <section className="space-y-4">
@@ -324,13 +336,13 @@ function Seccion({
       <p className="text-sm text-gray-600">{descripcion}</p>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {items.map(s => {
+        {items.map((s) => {
           const casoId = s.fields?.CASOS_ACTIVOS?.[0]
           const dias = s.fields?.Dias_Restantes
           const disabled = !casoId
 
           // Buscar información del caso asociado
-          const caso = casos?.find(c => c.id === casoId)
+          const caso = casos?.find((c) => c.id === casoId)
           const estudiante = caso?.fields?.Estudiante_Responsable
           const curso = caso?.fields?.Curso_Incidente
 
@@ -367,9 +379,11 @@ function Seccion({
                     <strong>Estado:</strong> {s.fields?.Estado || '—'}
                   </p>
                 </div>
-                
+
                 <div className="flex flex-col items-end">
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${styles.badge} whitespace-nowrap`}>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-semibold ${styles.badge} whitespace-nowrap`}
+                  >
                     {typeof dias === 'number'
                       ? dias < 0
                         ? `Vencido ${Math.abs(dias)}d`
@@ -379,7 +393,9 @@ function Seccion({
                       : 'Sin plazo'}
                   </span>
                   {s.fields?.Fecha_Plazo && (
-                    <span className="text-xs text-gray-500 mt-1">{formatDate(s.fields?.Fecha_Plazo)}</span>
+                    <span className="text-xs text-gray-500 mt-1">
+                      {formatDate(s.fields?.Fecha_Plazo)}
+                    </span>
                   )}
                 </div>
               </div>
@@ -390,7 +406,8 @@ function Seccion({
                   {lastAction ? `Última acción ${actividadLabel}` : `Abierto ${actividadLabel}`}
                   {refActividad && (
                     <span className="text-xs text-gray-400">
-                      {' '}· {formatDate(refActividad)}
+                      {' '}
+                      · {formatDate(refActividad)}
                       {fuente ? ` · (${fuente})` : ''}
                     </span>
                   )}

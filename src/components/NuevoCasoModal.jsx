@@ -242,11 +242,11 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/40 p-4 sm:p-6 overflow-y-auto">
       <div className="w-full max-w-3xl sm:max-w-4xl lg:max-w-6xl relative space-y-4">
 
         {/* Usar tarjeta consistente para el modal */}
-        <div className="bg-white rounded-xl shadow-sm p-6 relative">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 relative max-h-[90vh] overflow-y-auto">
 
         {guardando && (
             <div className="absolute inset-0 bg-white/90 flex items-center justify-center rounded-xl z-10">
@@ -426,7 +426,7 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
         {/* Nota: rol del estudiante principal ya se selecciona en la segunda línea */}
 
         {/* ACCIONES */}
-        <div className="flex justify-end gap-2 pt-4">
+        <div className="flex flex-col sm:flex-row sm:justify-end gap-2 pt-4">
           <button
             type="button"
             onClick={onClose}
@@ -438,7 +438,7 @@ export default function NuevoCasoModal({ onClose, onSaved }) {
             type="button"
             onClick={guardarCaso}
             disabled={guardando}
-            className="btn-primary disabled:opacity-50"
+            className="btn-primary disabled:opacity-50 w-full sm:w-auto"
           >
             {guardando ? 'Guardando…' : 'Guardar'}
           </button>

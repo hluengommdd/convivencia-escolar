@@ -142,6 +142,11 @@ export default function Estadisticas() {
   const promedioSeguimientos = stats?.promedioSeguimientos ?? { promedio: 0 }
   const promedioDiasPrimerSeguimiento = stats?.promedioDiasPrimerSeguimiento ?? { promedio_dias: 0 }
 
+  const promedioCierreRedondeado =
+    kpi?.promedio_cierre_dias != null
+      ? Math.round(Number(kpi.promedio_cierre_dias))
+      : null
+
   const cumplimientoPlazo = plazos.cumplimiento_pct
 
   // Carga por responsable
@@ -190,7 +195,7 @@ export default function Estadisticas() {
             total: kpi.casos_total || 0,
             abiertos: kpi.abiertos || 0,
             cerrados: kpi.cerrados || 0,
-            promedio: kpi.promedio_cierre_dias ?? null
+            promedio: promedioCierreRedondeado ?? null
           }}
           cumplimientoPlazo={cumplimientoPlazo}
           fueraDePlazo={Array.from({ length: plazos.fuera_plazo || 0 })}
@@ -285,7 +290,7 @@ export default function Estadisticas() {
             { label: 'Casos', value: kpi.casos_total },
             { label: 'Abiertos', value: kpi.abiertos },
             { label: 'Cerrados', value: kpi.cerrados },
-            { label: '⏱ Promedio cierre', value: kpi.promedio_cierre_dias ?? '—', suffix: 'días' }
+            { label: '⏱ Promedio cierre', value: promedioCierreRedondeado ?? '—', suffix: 'días' }
           ]
 
           const palette = Object.values(TIPOS_COLORS)
